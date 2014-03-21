@@ -1,0 +1,14 @@
+RUN_DIR:/home/mrdamon/GmiMetfieldProcessing/
+LOCK_FILE:.IamMerra2013.1
+ARCHIVE_PATH:/archive/anon/pub/gmidata2/input/metfields/geos5das-merra/
+DESTINATION_PATH:/discover/nobackup/projects/gmi/gmidata2/users/mrdamon/metfield-processing/merra/
+MAIL_TO:megandamon@gmail.com
+REAL_TIME:false
+ARCHIVE_SYSTEM:dirac
+ARCH_TYPE:dist_mem
+LOG_FILE:MERRA.log
+PRESTAGE_ONLY:false
+SOURCE_PATH:ftp
+START_DATE:20140101
+NUM_DAYS:31
+FILE_PREFIX:MERRA300.prod.assim

@@ -1,0 +1,35 @@
+# Megan.R.Damon@nasa.gov
+
+# The below environment is only intended for discover at NCCS at Goddard Space Flight Center.
+# This is only an example script. It likely won't work outside the NCCS.
+
+# Users of these processing scripts need to set up their environments similar to what is shown below below.
+
+# Users can override the specific paths in the environment by specifiying paths in the GmiAutomationConstants.py file.
+
+# config.in can be copied to a new name in order to run multiple instances of the processing script
+
+# Only 1 node is necessary to run these scripts
+# Each metdata day will take about 35-45 minutes, depending on how many cores you run it on.
+ 
+#PBS -S /usr/local/bin/bash
+#PBS -N Gmi_proc 
+#PBS -q general
+#PBS -l select=1:ncpus=12:mpiprocs=12
+#PBS -l walltime=12:00:00
+#PBS -W group_list=a930b
+#PBS -j eo 
+
+. /usr/share/modules/init/bash
+. /home/mrdamon/.bashrc
+module purge
+module load other/comp/gcc-4.6.3-sp1
+module load lib/mkl-14.0.0.080
+module load other/SIVO-PyD/spd_1.13.0_gcc-4.6.3-sp1 
+. loadEnv
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/other/SLES11.1/gdal/1.9.2/intel-12.1.0.233/lib/
+module swap comp/intel-11.0.083 comp/intel-12.1.0.233
+module load other/ncl-6.1.2
+
+time python -W ignore GmiProcessG5DasDiscover.py -i config.in | tee stdout.log
+

@@ -6,47 +6,53 @@
 # BEGIN DATE:         May 15th, 2008
 #
 # DESCRIPTION:
-# This is the main driver for the regridding of the GEOS5 DAS fields to GMI
-# compliant netcdf files.
+# This is the main driver for regridding the GEOS5 MERRA fields to GMI format.
+# Please email Megan.R.Damon@nasa.gov for assistance.
 #
-# Execute this script by typing : python GmiProcessGeos5Das.py -i <config filename>
+# Execute this script by typing : python GmiProcessGeos5DasDiscover.py -i <config filename>
 #    where <config filename> is the name of the input file which contains the
 #    following information:
 #
-#    - RUN_DIR          : directory the python files are in
+#    - RUN_DIR          : directory the python files are in;
+#                         i.e. the root of your cloned repository
+
 #    - LOCK_FILE        : File to lock out other processes from doing this job
-#    - ARCHIVE_PATH     : Where to archive the proccessed fields
+#                         This should be a uniquely named file, as other
+#                         instances will check for this file before processing metdata
+
+#    - ARCHIVE_PATH     : Where to archive the proccessed fields when done
+
 #    - DESTINATION_PATH : Where to hold the intermediate files while processing
+#                         i.e. a place that can hold a few gigabytes of data
+
 #    - MAIL_TO          : A comma seperated list of email addresses to send
 #                         updates to.
+
 #    - REALTIME         : flags if mode is real-time
+#                         It is recommended not to change this optoin
+
 #    - ARCHIVE_SYSTEM   : name of archive system (where ARCHIVE_PATH is)
+
 #    - ARCH_TYPE        : Can be either serial, shared_mem, or dist_mem (single cpu execution,
 #                         shared memory archtitecture - will use threads, or distributed nodes)
-#    - LOG_FILE         : File for keeping track of fields processed
+#                         It is recommended not to change this option.
+
+#    - LOG_FILE         : File for keeping track of fields processed. 
+#                         create this file in your RUN_DIR defined above
+
 #    - PRESTAGE_ONLY    : Set to true if you don't want any processing to occur.  Only prestaging will be done. 
+
 #    - SOURCE_PATH      : path to the GEOS5DAS fields for input
+#                         or "ftp" in the case of MERRA data
+
 #    - START_DATE       : first day 
+
 #    - NUM_DAYS         : number of days to compute, including the start date
 #                         should be 1 if real-time mode
+
 #    - FILE_PREFIX      : prefix of the raw files
 #                         
-#
-# Here is an example of the config file:
-#RUN_DIR:/home/mrdamon/Package/ProcessMerra/
-#LOCK_FILE:.IamMerra
-#ARCHIVE_PATH:/archive/anon/pub/gmidata2/input/metfields/geos5das-merra/
-#DESTINATION_PATH:/discover/nobackup/mrdamon/GmiMetFields/GEOS5DAS-merra/
-#MAIL_TO:megandamon@gmail.com
-#REAL_TIME:false
-#ARCHIVE_SYSTEM:dirac
-#ARCH_TYPE:dist_mem
-#LOG_FILE:MERRA.log
-#PRESTAGE_ONLY:false
-#SOURCE_PATH:ftp
-#START_DATE:20110801
-#NUM_DAYS:30
-#FILE_PREFIX:MERRA300.prod.assim
+# See config*.in files for examples. 
 #------------------------------------------------------------------------------
 
 __author__ = 'Megan Damon'

@@ -85,7 +85,7 @@ class GmiAutomationConstants:
    # other
    TMPPATH = "/tmp/" 
    FINAL_TMPPATH = "/home/mrdamon/ProcessMerra300/tmp/"
-   ENVFILE = "/home/mrdamon/ProcessMerra300/loadEnv"
+   ENVFILE = "/home/mrdamon/GmiMetfieldProcessing/loadEnv"
 
    #---------------------------------------------------------------------------  
    # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC
