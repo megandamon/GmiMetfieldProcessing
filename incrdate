@@ -1,0 +1,109 @@
+#!/bin/csh -f
+
+@ len = `echo $1 | wc -m` - 1
+if ( $len > 6 ) then
+  @ bc = `echo $1 | cut -c1-2`
+  set sdate=`echo $1 | cut -c3-9`
+ else
+  @ bc = 19
+  set sdate=$1
+ endif
+ 
+set incr = $2
+if ($incr == '') set incr = 1
+
+set zero = 0
+
+set by = `echo $sdate | cut -c1,2 `
+set bm = `echo $sdate | cut -c3,4 `
+set bd = `echo $sdate | cut -c5,6 `
+
+#... debug statements
+#echo start $bc $by $bm $bd
+#if ($bc != 00) echo bc not 00
+#if ($bm == 02 && $bc != 0) echo bc and bm
+
+@ bd = $bd + $incr
+@ bm = $bm
+-again: 
+if ($bm == 1 | $bm == 3 | $bm == 5 | $bm == 7 | $bm == 8 | $bm == 10 | $bm == 12 ) then
+   if ($bd > 31) then
+      @ bd = $bd - 31
+      @ bm = $bm + 1
+    endif
+   if ($bd < 1) then
+      @ bd = 30 + $bd
+      @ bm = $bm - 1
+      if ($bm == 0) then
+        @ bm = 12
+        @ bd = 1 + $bd
+        @ by = $by - 1
+       endif
+      if ($bm == 7) then
+        @ bd = 1 + $bd
+       endif
+      if ($bm == 2) then
+        @ byr = $by / 4
+        @ byr = $byr * 4
+        set days = 28
+        @ by = $by
+        if ($byr == $by && $bc != 0) set days = 29
+        @ bd = $days + $bd - 30
+       endif
+     endif
+ endif
+if ($bm == 2) then
+      @ byr = $by / 4
+      @ byr = $byr * 4
+      set days = 28
+      @ by = $by
+      if ($byr == $by && $bc != 0) set days = 29
+      if ($bd > $days) then
+         @ bd = $bd - $days
+         @ bm = $bm + 1
+       endif
+   if ($bd < 1) then
+      @ bd = 31 + $bd
+      @ bm = $bm - 1
+    endif
+ endif
+if ($bm == 4 | $bm == 6 | $bm == 9 | $bm == 11) then
+   if ($bd > 30) then
+      @ bd = $bd - 30
+      @ bm = $bm + 1
+    endif
+   if ($bd < 1) then
+      @ bd = 31 + $bd
+      @ bm = $bm - 1
+    endif
+ endif
+if ($bm == 13) then
+  @ by = $by + 1
+  @ bm = 1
+ endif
+if ($bd > 31) goto -again
+if ($bd < 1) goto -again
+if ($bd < 10) set bd = $zero$bd
+if ($bm < 10) set bm = $zero$bm
+#echo '1' $bc $by $bm $bd
+
+if ( $by >= 100 ) then
+  @ bc = $bc + `echo $by | cut -c1`
+  @ by = `echo $by | cut -c2-3`
+ endif
+#echo '2' $bc $by $bm $bd
+while ( $by < 0 ) 
+  @ bc = $bc - 1
+  @ by = $by + 100
+ end
+if ($bc < 10) set bc = $zero$bc
+#echo '3' $bc $by $bm $bd
+#echo $by | wc -m
+if ( `echo $by | wc -m` == '2' ) set by = $zero$by
+#echo $bc $by $bm $bd
+
+set sdate = $by$bm$bd
+if ( $len > 6 ) then
+  set sdate=$bc$sdate
+ endif
+echo $sdate

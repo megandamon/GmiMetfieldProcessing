@@ -1,0 +1,14 @@
+#!/usr/local/bin/bash
+
+. /usr/share/modules/init/bash
+
+
+alias python=/usr/local/other/python/2.5.2/bin/python
+export LD_LIBRARY_PATH=/opt/scali/lib64:/usr/local/intel/mkl/9.1.023/lib/em64t:/usr/local/intel/comp/9.1.052/lib:/usr/local/other/NCO/3.1.8/lib:/usr/local/other/NCO/3.1.8/lib:/usr/local/other/NCO/3.1.8/lib:/usr/local/other/python/2.5.2/lib/:/usr/local/intel/mkl/9.1.023/lib/em64t:/usr/local/intel/comp/9.1.052/lib:/usr/local/other/NCO/3.1.8/lib:/usr/local/other_old/baselibs/v2_2rp2_213.34meta/Linux/lib:/usr/local/other/python/2.5.2/lib/python2.5/site-packages/pynetcdf:/usr/local/other/python/2.5.2/lib/python2.5/site-packages/numpy
+export PATH=/opt/scali/bin:/usr/local/intel/comp/9.1.052/bin:/home/mrdamon/bin:/usr/local/bin:/usr/bin:/usr/X11R6/bin:/bin:/opt/gnome/bin:/opt/kde3/bin:/usr/lib/qt3/bin:/usr/pbs/bin:/usr/local/other/netcdf/3.6.1/bin:/usr/local/other/NCO/3.1.8/bin:/usr/pbs/bin:/usr/local/other/CDAT/4.1.2/bin:/home/mrdamon/bin/:/usr/local/other/NCO/3.9.5_intel9.1.052/bin:/usr/local/other/netcdf/3.6.1/bin:/usr/local/other/NCO/3.1.8/bin:/usr/pbs/bin:/usr/local/other/CDAT/4.1.2/bin:/home/mrdamon/bin/:/usr/local/other/NCO/3.9.5_intel9.1.052/bin:/usr/local/other/netcdf/3.6.1/bin:/usr/local/other/NCO/3.1.8/bin:/usr/pbs/bin:/usr/local/other/CDAT/4.1.2/bin:/home/mrdamon/bin/:/usr/local/other/NCO/3.9.5_intel9.1.052/bin
+
+
+module purge
+module load comp/intel-11.0.083 mpi/impi-3.2.2.006 lib/mkl-10.0.3.020 other/comp/gcc-4.5 other/SIVO-PyD/spd_1.1.0b
+
+ulimit -s unlimited
