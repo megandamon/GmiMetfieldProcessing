@@ -69,7 +69,7 @@ class CommonUtilities:
             jobId = child.read()
             jobId = jobId.rstrip ('\n')
             err = child.close()
-            self.watchQueueJob (jobId)  
+            self.watchQueueJob (jobId) 
         except:
             raise
 
@@ -78,7 +78,6 @@ class CommonUtilities:
 
     def watchQueueJob (self, jobId):
 
-        print "in watch queue job" 
 
         if len (jobId) == 0:
             raise self.constants.ERROR
@@ -91,12 +90,12 @@ class CommonUtilities:
         print qstatCommand
     
         child = os.popen(qstatCommand)
+
         theOutput = child.read()
         theOutput = theOutput.rstrip ('\n')
         err = child.close()
-
+        
         while theOutput == jobId:
-            print 'in while'
             sleep (30)
             
             child = os.popen(qstatCommand)

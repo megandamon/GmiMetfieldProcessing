@@ -1,0 +1,14 @@
+RUN_DIR:/discover/nobackup/mrdamon/MERRA2/
+LOCK_FILE:.IamMerra2LockJun
+ARCHIVE_PATH:/archive/anon/pub/gmidata2/input/metfields/geos5das-merra2/
+DESTINATION_PATH:/discover/nobackup/projects/gmi/gmidata2/users/mrdamon/metfield-processing/merra2
+MAIL_TO:megandamon@gmail.com
+REAL_TIME:false
+ARCHIVE_SYSTEM:discover
+ARCH_TYPE:dist_mem
+LOG_FILE:MERRA2.log
+PRESTAGE_ONLY:false
+SOURCE_PATH:/discover/nobackup/projects/gmao/merra2/data/products/d5124_m2_jan10/
+START_DATE:20150605
+NUM_DAYS:1
+FILE_PREFIX:MERRA2_400

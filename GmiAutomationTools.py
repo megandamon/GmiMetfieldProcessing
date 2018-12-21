@@ -377,7 +377,6 @@ class GmiAutomationTools:
       # call external program to increment the date
       tempFileName = "out.out" + str(time())
       systemCommand = runPath + './incrdate ' + theDate + ' >& ' + tempFileName
-      print systemCommand
       systemReturnCode = os.system (systemCommand)
 
       if systemReturnCode != 0:
@@ -464,7 +463,6 @@ class GmiAutomationTools:
          
 
          nextDate = task.firstDay
-         print "first day: ", task.firstDay
          while loopCounter < task.numberOfDays:
 
             # add a new blank task
@@ -478,6 +476,7 @@ class GmiAutomationTools:
             
             # make each task just say one day 
             newTasks [len(newTasks)-1].numberOfDays = 1
+            
             nextDate = self.incrementDate (nextDate, processingDir)
 
             # then, change the date   

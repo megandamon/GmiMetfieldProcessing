@@ -35,9 +35,10 @@ from pynetcdf import *
 class GmiGEOS5DasInst2D (GmiGEOS5DasFields):
    def __init__(self):
       GmiGEOS5DasFields.__init__(self)
+      self.netCdfObject = GmiNetCdfFileTools ()      
       self.TYPE = "inst2D"
       self.SOURCESTYLE = "GMAO"
-      self.GMIPREFIX = "inst3_3d_chm_Ne"
+      self.GMIPREFIX = "inst1_2d_asm_Nx"
       self.DIR = "diag"
       self.RECORDS = []
       self.AVERAGEDRECORDS = self.RECORDS
@@ -47,9 +48,9 @@ class GmiGEOS5DasInst2D (GmiGEOS5DasFields):
 
    def resetPrefixesAndFields (self):
       self.PREFIXES = []
-      self.PREFIXES.append ("inst3_3d_chm_Ne")
+      self.PREFIXES.append ("inst1_2d_asm_Nx")
       self.GEOS5FIELDS = []
-      self.GEOS5FIELDS.append ("PLE") #inst3_3d_chm_Ne 540, 361
+      self.GEOS5FIELDS.append ("PS")
       self.constants = GmiAutomationConstants ()                  
 
    def __del__(self):
@@ -70,6 +71,10 @@ class GmiGEOS5DasInst2D (GmiGEOS5DasFields):
           task.day
       self.resetPrefixesAndFields ()
       
+      print "Copying the constant field file"
+      self.copyConstantFieldFile (task)
+      print "Done the constant field file"
+
       # call the parent routine
       print "First stage processing"
       GmiGEOS5DasFields.regridAndDumpHdfFiles (self, task)
@@ -79,14 +84,15 @@ class GmiGEOS5DasInst2D (GmiGEOS5DasFields):
       self.resolveFakeDimensions (task)
       print "Done resolving fake dimensions"
 
-      print "Extracting surface pressure"
-      self.extractSurfacePressure (task)
-      print "Done extracting surface pressure"
-
       print "Extracting time records"
-      GmiGEOS5DasFields.extractTimeRecords (self, task, "time", "0", "7", "1")
+      GmiGEOS5DasFields.extractTimeRecords (self, task, "time", "0", "23", "3")
       print "Done extracting time records"
       
+      print "Merging the collections..."
+      self.mergeAllFilesIntoOne (task)
+      print "done with merging across 3D types"
+
+
       print "Extracting necessary Inst2D fields"
       GmiGEOS5DasFields.doFieldExtraction (self, task)
       print "Done with field extraction"
@@ -95,20 +101,109 @@ class GmiGEOS5DasInst2D (GmiGEOS5DasFields):
       GmiGEOS5DasFields.makeTimeDimRecordDim (self, task)
       print "Done Making time dimension a record dimension"
 
+   #---------------------------------------------------------------------------  
+   # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC
+   #
+   # DESCRIPTION: 
+   # Sets up the threads and calls the merge routine.
+   #---------------------------------------------------------------------------    
+   def mergeAllFilesIntoOne (self, task):    
+      exitMutexes = []
+      count = 0
+      parallelTools = GmiParallelTools (task.archType)
+      systemCommands = []
+
+      print "before loop"
+
+      for resolution in self.RESOLUTIONS:
+
+         exitMutexes.append (thread.allocate_lock ())
+         thread.start_new (self.mergePrefixes, \
+                           (task, resolution, exitMutexes[count]))
+         count = count + 1
+
+      #----------------------------------------------------------------
+      # Wait for all three threads before proceeding 
+      #----------------------------------------------------------------
+      for mutex in exitMutexes:
+         while not mutex.locked (): 
+            pass
+
+   #---------------------------------------------------------------------------  
+   # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC
+   #
+   # DESCRIPTION: 
+   # First merges all the files specified by the self.PREFIXES array
+   # into a file with the self.GMIPREFIX.  
+   #---------------------------------------------------------------------------    
+   def mergePrefixes (self, task, resolution, exitMutex):
+      basePath = task.destinationPath + "/" + \
+                 task.year + "/" + task.month + \
+                 "/"
+      constants = GmiAutomationConstants ()
+
+      fileNames = []
+      for prefix in self.PREFIXES:
+         print prefix
+         metFile = ""
+         newFile = basePath + \
+                   task.filePrefix + "." + \
+                   prefix + "." + \
+                   task.year + task.month + \
+                   task.day + "." + \
+                   resolution + ".nc"
+            
+         fileNames.append (newFile)
+            
+      outFileName = basePath + task.filePrefix + "." + \
+                    self.GMIPREFIX + "." + task.year + \
+                    task.month + task.day + "." + \
+                    resolution + ".nc"
+
+      print "merging the files: ", fileNames
+
+      self.netCdfObject.mergeFilesIntoNewFile ( \
+               fileNames, outFileName)
+         
+      print "mergePrefixes ACQUIRING MUTEX"
+      exitMutex.acquire ()
+
+
+   # The constant fields are in the netcdf of the working directory.
+   # MERRA2_400.const_2d_asm_Nx.00000000.nc4
+   # MERRA2_300.const_2d_asm_Nx.00000000.nc4
+   def copyConstantFieldFile (self, task):
+      print "Ready to copy the constant field file!"
+
+      fullDestination = task.destinationPath + "/" + task.year + "/" + task.month 
+      sourcePath = "netcdf/" + task.filePrefix + ".const_2d_asm_Nx.00000000.nc4"
+      systemCommand = "cp " + sourcePath + " " + fullDestination + \
+          "/" + task.filePrefix + ".const_2d_asm_Nx." + task.year + task.month + \
+          task.day + ".nc4"
+
+      print systemCommand
+      print os.system(systemCommand)
+
+      self.PREFIXES.append ("const_2d_asm_Nx")
+      self.GEOS5FIELDS.append ("FRLAKE")
+      self.GEOS5FIELDS.append ("FRLAND")
+      self.GEOS5FIELDS.append ("FRLANDICE")
+      self.GEOS5FIELDS.append ("FROCEAN")
+      self.GEOS5FIELDS.append ("PHIS")
 
    def resolveFakeDimensions (self, task):
 
       exitMutexes = []
       count = 0
       for prefix in self.PREFIXES:
-         for resolution in ["2x2.5", "1x1.25"]:
+         for resolution in ["2x2.5", "1x1.25", "0.625x0.5"]:
             fileName = self.basePath + prefix  + self.endPath + "." + resolution + ".nc"
             if not os.path.exists (fileName): raise fileName + " does not exist! ERROR"
 
             # for each file type fix the fake dimensions
             exitMutexes.append (thread.allocate_lock())
             thread.start_new (self.gmiNetCdfObject.resolveFieldDimensions, \
-                (fileName, count, self.GEOS5FIELDS, ['time', 'lev_edges', 'lat', 'lon'], exitMutexes[count]))
+                (fileName, count, self.GEOS5FIELDS, ['time', 'lat', 'lon'], exitMutexes[count]))
             
             count = count + 1
          

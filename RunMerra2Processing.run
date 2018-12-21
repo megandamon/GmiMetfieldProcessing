@@ -1,0 +1,18 @@
+# #!/usr/local/bin/bash
+
+inputScript="$1"
+
+. /usr/share/modules/init/bash
+. /home/mrdamon/.bashrc
+module purge
+module load other/comp/gcc-4.6.3-sp1
+module load lib/mkl-14.0.0.080
+module load other/SIVO-PyD/spd_1.13.0_gcc-4.6.3-sp1 
+. loadEnv
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/other/SLES11.1/gdal/1.9.2/intel-12.1.0.233/lib/
+module swap comp/intel-11.0.083 comp/intel-12.1.0.233
+module load other/ncl-6.1.2
+
+time python -W ignore GmiProcessMerra2.py -i $inputScript
+
+

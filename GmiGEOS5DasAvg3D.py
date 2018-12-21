@@ -1,11 +1,12 @@
-#!/usr/bin/python
+
+ #!/usr/bin/python
 
 #------------------------------------------------------------------------------
 # NASA/GSFC, Software Integration & Visualization Office, Code 610.3
 #------------------------------------------------------------------------------
 # AUTHORS:      Megan Damon
-# AFFILIATION:  NASA GSFC / NGIT / TASC
-# DATE:         October 30th, 2007
+# AFFILIATION:  NASA GSFC / SSAI
+# DATE:         Feb 8 2016
 #
 # DESCRIPTION:
 # This is the class for the tavg3_ fields (averaged)
@@ -51,41 +52,52 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
 
       self.PREFIXES = []
 
-      # This collection was on the native grid and a pain to deal with
-      # found the variables it had in other files 
-      # self.PREFIXES.append ("tavg3_3d_chm_Ne")
+      self.fieldMap = {}
 
       self.GEOS5FIELDS = []
+      
+      # 3-hr
+      self.PREFIXES.append ("tavg3_3d_asm_Nv")
+      self.GEOS5FIELDS.append ("QV")
+      self.GEOS5FIELDS.append ("T")
+      self.GEOS5FIELDS.append ("DELP")
+      self.GEOS5FIELDS.append ("U")
+      self.GEOS5FIELDS.append ("V")
+      self.fieldMap["tavg3_3d_asm_Nv"] = ["QV", "T", "DELP"]
+      self.fieldMap["tavg3_3d_asm_Nv_set2"] = ["U", "V"]
+
+
+      # 3-hr
+      self.PREFIXES.append ("tavg3_3d_cld_Nv")
+      self.GEOS5FIELDS.append ("DTRAIN")
+      self.GEOS5FIELDS.append ("TAUCLI")
+      self.GEOS5FIELDS.append ("TAUCLW")
+      self.GEOS5FIELDS.append ("CLOUD")
+      self.GEOS5FIELDS.append ("QI")
+      self.GEOS5FIELDS.append ("QL")
       self.GEOS5FIELDS.append ("time")
       self.GEOS5FIELDS.append ("lev")
       self.GEOS5FIELDS.append ("lon")
       self.GEOS5FIELDS.append ("lat")
+      self.fieldMap["tavg3_3d_cld_Nv"] = ["DTRAIN", "TAUCLI", "TAUCLW"]
+      self.fieldMap["tavg3_3d_cld_Nv_set2"] = ["CLOUD", "QI", "QL", "lev", "time", "lat", "lon"]
 
-      self.PREFIXES.append ("tavg3_3d_chm_Fv")
-      self.GEOS5FIELDS.append ("QV") 
-      self.GEOS5FIELDS.append ("T") 
-      self.GEOS5FIELDS.append ("DTRAIN") 
-      self.GEOS5FIELDS.append ("TAUCLI") 
-      self.GEOS5FIELDS.append ("TAUCLW")
-      self.GEOS5FIELDS.append ("CFAN")
-      self.GEOS5FIELDS.append ("CFCU")
-      self.GEOS5FIELDS.append ("CFLS")
-      self.GEOS5FIELDS.append ("QI")
-      self.GEOS5FIELDS.append ("QL")
-      self.GEOS5FIELDS.append ("U")
-      self.GEOS5FIELDS.append ("V")
-      self.GEOS5FIELDS.append ("DELP") 
-
-      self.PREFIXES.append ("tavg3_3d_chm_Fe")
-      self.GEOS5FIELDS.append ("CMFMC") 
-      self.GEOS5FIELDS.append ("KH")
-      self.GEOS5FIELDS.append ("MFZ")
-      self.GEOS5FIELDS.append ("PFICU") 
+      # 3-hr edge
+      self.PREFIXES.append ("tavg3_3d_mst_Ne")
+      self.GEOS5FIELDS.append ("CMFMC")
+      self.GEOS5FIELDS.append ("PFICU")
       self.GEOS5FIELDS.append ("PFLCU")
       self.GEOS5FIELDS.append ("PFILSAN")
       self.GEOS5FIELDS.append ("PFLLSAN")
+      self.GEOS5FIELDS.append ("PLE")
+      self.fieldMap["tavg3_3d_mst_Ne"] = ["CMFMC", "PFICU", "PFLCU"]
+      self.fieldMap["tavg3_3d_mst_Ne_set2"] = ["PFILSAN", "PFLLSAN", "PLE"]
 
 
+      # 3-hr edge
+      self.PREFIXES.append ("tavg3_3d_trb_Ne")
+      self.GEOS5FIELDS.append ("KH")
+      self.fieldMap["tavg3_3d_trb_Ne"] = ["KH", "lev"]
 
    #---------------------------------------------------------------------------  
    # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC
@@ -99,145 +111,257 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
                       "/" + task.filePrefix + "."
       self.endPath = "." + task.year + task.month + \
                      task.day
-
-
-                     
-      # call the parent routine for the collections
-      # on the reduced grid (already in 1x1.25)
-
-      self.RESOLUTIONS = ["2x2.5"]
-
-      self.PREFIXES = []
-      self.GEOS5FIELDS = []
-      self.PREFIXES.append ("tavg3_3d_chm_Fv")
-      self.GEOS5FIELDS.append ("QV") 
-      self.GEOS5FIELDS.append ("T") 
-      self.GEOS5FIELDS.append ("DTRAIN") 
-      self.GEOS5FIELDS.append ("TAUCLI") 
-      self.GEOS5FIELDS.append ("TAUCLW")
-      self.GEOS5FIELDS.append ("CFAN")
-      self.GEOS5FIELDS.append ("CFCU")
-      self.GEOS5FIELDS.append ("CFLS")
-      self.GEOS5FIELDS.append ("QI")
-      self.GEOS5FIELDS.append ("QL")
-      self.GEOS5FIELDS.append ("U")
-      self.GEOS5FIELDS.append ("V")
-      self.GEOS5FIELDS.append ("DELP") 
-      self.GEOS5FIELDS.append ("lat")
-      self.GEOS5FIELDS.append ("lon")
-      self.GEOS5FIELDS.append ("lev")
-      self.GEOS5FIELDS.append ("time")
-
-
-      print "Avg3D is calling the parent routine for the chm_Fv fields..."
-      GmiGEOS5DasFields.regridAndDumpHdfFiles (self, task)
-      print "done with chem_Fv fields."
-
-
-      self.PREFIXES = []
-      self.GEOS5FIELDS = []
-      self.PREFIXES.append ("tavg3_3d_chm_Fe")
-      self.GEOS5FIELDS.append ("CMFMC") 
-      self.GEOS5FIELDS.append ("KH")
-      self.GEOS5FIELDS.append ("MFZ")
-      self.GEOS5FIELDS.append ("PFICU") 
-      self.GEOS5FIELDS.append ("PFLCU")
-      self.GEOS5FIELDS.append ("PFILSAN")
-      self.GEOS5FIELDS.append ("PFLLSAN")
-      self.GEOS5FIELDS.append ("lat")
-      self.GEOS5FIELDS.append ("lon")
-      self.GEOS5FIELDS.append ("lev")
-      self.GEOS5FIELDS.append ("time")
-
-
-      print "Avg3D is calling the parent routine for the chm_Fe fields..."
-      GmiGEOS5DasFields.regridAndDumpHdfFiles (self, task)
-      print "done with chem_Fe fields."
-
-      self.RESOLUTIONS.append ("1x1.25")
-      print "Done with the 3D parent routine calls"
-      
-      self.resetPrefixesAndFields ()
-
-      # dump HDF-EOS 1x1.25 original files to NETCDF  
-      print "Convert HDF-EOS 1x1.25 files to Netcdf..."
-      self.doDumpHdfEosToNetcdf (task)
-      print "Done converting HDF-EOS files"
-
-      # no longer used, but could be useful later
-      # process the tavg3_3d_chm_Ne collection
-      # print "Process the tavg3_3d_chm_Ne collection..."
-      # self.processChmNeFields (task)
-      # print "Done processing the tavg3_3d_chm_Ne collection"
-      #----------------------------------------#
-      # For testing only
-      # self.PREFIXES.append ("tavg3_3d_chm_Ne")
-      #----------------------------------------#
-
-      print "Extracting and saving lat, lon, lev, and time dimensions"
-      self.extract1DVariables (task)
-      print "Done extracting and saving lat, lon, lev, and time dimensions"
+                  
+      self.PREFIXES.append ("tavg3_3d_cld_Nv_set2")      
+      self.PREFIXES.append ("tavg3_3d_mst_Ne_set2")
+      self.PREFIXES.append ("tavg3_3d_asm_Nv_set2")
    
+      # extract only the needed variables first
+      print "Extracting necessary Avg3D fields..."
+      self.doFieldExtraction (task)
+      print "done with field extraction"
+
+      print "Avg3D is calling the parent regridAndDumpHdfFiles routine"
+      self.regridAndDumpHdfFiles (task)
+      print "done with regrid and dump to HDF"
+
+      print "Extracting and saving lat, lev, and time dimensions"
+      self.extract1DVariables (task)
+      print "Done extracting and saving lat, lev, and time dimensions"
+
       print "Resolving fake dimensions"
       self.resolveFakeDimensions (task)
-      print "Done resolving fake dimensions"
+      print "Done resolving fake dimensions"   
 
       print "Extracting time records..."
       GmiGEOS5DasFields.extractTimeRecords (self, task, "time", "0", "7", "1")
       print "Done extracting time records"
 
-      # new calculation
-      print "Calculating OPTDEPTH, TAUCLI, TAUCLW, and CLOUD..."
-      self.calculateOptDepthVarsAppendToCldV (task)
-      print "Done with calculating optical depth"
+      print "Calculating OPTDEPTH 0.625 degree only "
+      self.extractCloudFieldsNativeGrid (task)
+      print "Done with calculating optical depth 0.625 degree only"
 
-      #----------------------------------------#
-      #For testing only 
-      #self.GEOS5FIELDS.append('CLOUD')
-      #self.GEOS5FIELDS.append('OPTDEPTH')
-      #self.PREFIXES.append ("tavg3_3d_cloud")
-      #----------------------------------------#
-
-      # for native collection Chm_Ne
-      # print "Making time dimension the record dimension"
-      # self.netCdfObject.makeDimensionRecordDimension \
-      #    (self.basePath + "tavg3_3d_chm_Ne"  + self.endPath + ".1x1.25.nc", "time")
-      # print "Done making time dimension the record dimension"
-
-      print "Renaming lev to lev_edges in the ChmFe file"
-      self.renameLevInChmFe ()
-      print "Done enaming lev to lev_edges in the ChmFe file"
-
-      print "Merging the collection..."
+      print "Merging the collections..."
       self.mergeAllFilesIntoOne (task)
-      print "done with merging across 3D types"
-
-
-      # may no longer be needed b/c of new reset process (see above)
-      # extract only the needed variables
-      print "Extracting necessary Avg3D fields..."
-      GmiGEOS5DasFields.doFieldExtraction (self,task)
-      print "done with field extraction"
+      print "done with merging across 3D types"   
 
       print "Making time dimension a record dimension"
-      self.netCdfObject.makeDimensionRecordDimension  (self.basePath + self.GMIPREFIX + self.endPath + ".2x2.5.nc", "time")
+      GmiGEOS5DasFields.makeTimeDimRecordDim (self, task)
       print "Done Making time dimension a record dimension"
+
+      print "Removing CLOUD fields from lower resolution files"
+      self.removeCloudFieldsFromLowRes (task)
+      print "Done removing CLOUD fields from lower resolution files"
 
       print "Avg3D exiting"
 
+
+   # we do this because we will generate the lower res CLOUD fields
+   # from an external program later in the doProcessing routine
+   # see GmiDasTasks module
+   def removeCloudFieldsFromLowRes (self, task):
+
+      print "In removeCloudFieldsFromLowRes routine"
+
+      basePath = task.destinationPath + "/" + \
+                 task.year + "/" + task.month + \
+                 "/"
+
+      NOCLOUDFIELDS = self.GEOS5FIELDS
+      NOCLOUDFIELDS.remove ("CLOUD")
+      NOCLOUDFIELDS.remove ("TAUCLW")
+      NOCLOUDFIELDS.remove ("TAUCLI")
+      NOCLOUDFIELDS.remove ("time")
+      NOCLOUDFIELDS.remove ("lat")
+      NOCLOUDFIELDS.remove ("lon")
+      NOCLOUDFIELDS.remove ("lev")
+      NOCLOUDFIELDS.remove ("lev_edges")
+      
+
+      for resolution in [ "1x1.25", "2x2.5" ]:
+         outFileName = basePath + task.filePrefix + "." + \
+             self.GMIPREFIX + "." + task.year + \
+             task.month + task.day + "." + \
+             resolution + ".nc"
+
+         print "outFileName: ", outFileName
+
+         returnCode = self.netCdfObject.extractSubsetOfVariables (NOCLOUDFIELDS, \
+                                                                     outFileName, outFileName)
+         if returnCode != self.constants.NOERROR:
+            print "There was a problem extracting the fields without the cloud vars!"
+            return self.constants.ERROR
+
  
 
+   def doFieldExtraction (self, task):
+      print "in doFieldExtraction"
+
+      # this object contains the routine
+      # for the extraction
+      gmiNetCdfObject = GmiNetCdfFileTools ()
+
+      for prefix in self.PREFIXES:
+
+         subfix = "_set2"
+         if subfix in prefix: 
+            print prefix
+            fileString = task.filePrefix + "." + prefix.replace(subfix,"") + \
+                "." + task.year + task.month + task.day + \
+                ".nc4"
+         else:
+            fileString = task.filePrefix + "." + prefix + \
+                "." + task.year + task.month + task.day + \
+                ".nc4"
+            
+         fileName = task.destinationPath + "/" + \
+             task.year + "/" + task.month + \
+             "/" + fileString
+                    
+
+         outFileName = task.destinationPath + "/" + task.year + "/" + task.month + "/" + \
+             task.filePrefix + "." + prefix + "." + task.year + task.month + task.day + \
+             ".extracted.nc4"
+
+         print fileName
+         print outFileName
+         print self.fieldMap[prefix]
+
+         returnCode = gmiNetCdfObject.extractSubsetOfVariables (self.fieldMap[prefix], fileName, \
+                                                                   outFileName)
+
+         if returnCode != self.constants.NOERROR:
+            print "There was a problem extracting the variables"
+            
+
+      for prefix in self.PREFIXES:
+
+         fileString = task.filePrefix + "." + prefix + \
+             "." + task.year + task.month + task.day + \
+             ".extracted.nc4"
+
+         fileName = task.destinationPath + "/" + \
+             task.year + "/" + task.month + \
+             "/" + fileString
+                    
+         outFileName = task.destinationPath + "/" + task.year + "/" + task.month + "/" + \
+             task.filePrefix + "." + prefix + "." + task.year + task.month + task.day + \
+             ".nc4"
+
+         systemCommand = "cp " + fileName + " " + outFileName
+         returnCode = os.system(systemCommand)
+         
+         print "returnCode: ", returnCode
+
+         if prefix == "tavg3_3d_trb_Ne":
+            print "about to rename lev lev_edges"
+            gmiNetCdfObject.renameFields (["lev"], ["lev_edges"], "-v", outFileName)
+            self.GEOS5FIELDS.append ("lev_edges")
+            self.fieldMap["tavg3_3d_trb_Ne"] = ["KH", "lev_edges"]
+
+         
+
    #---------------------------------------------------------------------------  
-   # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC
+   # AUTHORS: Megan Damon NASA GSFC / SSAI
    #
    # DESCRIPTION: 
    #---------------------------------------------------------------------------  
-   def renameLevInChmFe (self):
-      print "in routine to rename lev in chemFe file"
-      fileName = self.basePath + "tavg3_3d_chm_Fe" + self.endPath + ".1x1.25.nc"
-      print fileName
-      self.netCdfObject.renameFields (['lev'], ['lev_edges'], '-d', fileName)
-      self.netCdfObject.renameFields (['lev'], ['lev_edges'], '-v', fileName)
+
+   def regridAndDumpHdfFiles (self, task):
+      print "Starting Avg3D regridAndDumpHdfFiles"
+      try:
+         self.regridFilesAllResolutions (task)
+         GmiGEOS5DasFields.convertHdf5ToHdf4 (self, task)
+         print "Dumping converting hdf5 to hdf4"
+         GmiGEOS5DasFields.dumpFieldsToNetcdf (self, task)
+         print "Done dumping to netcdf"
+      except: 
+         raise
+
+   #---------------------------------------------------------------------------  
+   # AUTHORS: Megan Damon NASA GSFC / SSAI
+   #
+   # DESCRIPTION: 
+   #---------------------------------------------------------------------------  
+
+   def regridFilesAllResolutions (self, task):
+      print "Starting Avg3D regridFilesAllResolutions"
+      
+      # construct the destination path
+      gmiAutoObject = GmiAutomationTools ()
+      destinationPath = task.destinationPath + "/" + \
+                        task.year + "/" + task.month
+
+      # create the path if it does not exist
+      if not os.path.exists (destinationPath):
+         gmiAutoObject.createDirectoryStructure (destinationPath)   
+
+      # create a remap object
+      remapObject = GmiGFIORemapTools ()
+
+      exitMutexes = []
+      count = 0
+
+      parallelTools = GmiParallelTools(task.archType)
+
+      systemCommands = []
+
+      print "PREFIXES: ", self.PREFIXES
+
+      for prefix in self.PREFIXES:
+
+         fileString = task.filePrefix + "." + prefix + \
+                      "." + task.year + task.month + task.day + \
+                      ".nc4"
+         
+         print fileString
+             
+         if self.SOURCESTYLE == "GMAO":
+            sourceFile = task.sourcePath + self.DIR + "/Y" + \
+                         task.year + "/M" + task.month + "/" + \
+                         fileString
+         else:
+            sourceFile = task.sourcePath + "/" + task.year + \
+                         "/" + task.month + "/" + fileString
+         print sourceFile
+               
+         # process each resolution
+         for resolution in ["1x1.25", "2x2.5", "0.625x0.5"]:
+
+            destinationFile = destinationPath + "/" + \
+                              fileString[0:len(fileString)-3] + \
+                              resolution + ".hdf"
+               
+
+
+            print destinationFile
+
+            if resolution == "0.625x0.5": 
+               systemCommand = "cp " + sourceFile + " " + destinationFile
+               print systemCommand
+               sysOut = os.system(systemCommand)
+               print "return Code: ", sysOut
+
+            else: 
+               exitMutexes.append (thread.allocate_lock())
+               thread.start_new(remapObject.gfioRemap, \
+                                   (sourceFile, \
+                                       destinationFile, \
+                                       resolution, \
+                                       self.constants.REMAPEXEC, \
+                                       self.BIT, \
+                                       exitMutexes[count]))
+               
+               count = count + 1
+
+      #----------------------------------------------------------------
+      # WAIT:: Wait for all threads before proceeding 
+      #----------------------------------------------------------------
+      for mutex in exitMutexes:
+         while not mutex.locked (): 
+            pass
+
+      print "done regridding"
 
 
    #---------------------------------------------------------------------------  
@@ -255,11 +379,11 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
       print "basePath: ", basePath
       print "basePathWithDate: ", basePathWithDate
 
-      for resolution in ["1x1.25", "2x2.5"]:
+      for resolution in ["1x1.25", "2x2.5", "0.625x0.5"]:
          filesToMerge = []
 
-         # extract each 1D var from chm_Fv file into it's own file and resolve fake dimensions
-         fileName = basePath + "tavg3_3d_chm_Fv"  + self.endPath + "." + resolution + ".nc"
+         fileName = basePath + "tavg3_3d_cld_Nv"  + self.endPath + "." + resolution + ".nc"
+
          print "fileName: ", fileName
 
          for var in ['lat', 'lon', 'time', 'lev']:
@@ -275,15 +399,6 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
             
             filesToMerge.append (newFileName)
 
-# native collection currently not being used
-#         chmFileName = basePath + "tavg3_3d_chm_Ne"  + self.endPath + "." + resolution + ".nc"
-#         newChmFileName = basePathWithDate + "lev73." + resolution + ".nc"
-#         if os.path.exists (newChmFileName): os.remove(newChmFileName)
-#        self.netCdfObject.extractSubsetOfVariables (['lev'], chmFileName, newChmFileName)
-#        self.netCdfObject.resolveFieldDimensions (newChmFileName, 0, ['lev'], ['lev_edges'], thread.allocate_lock())
-#        self.netCdfObject.renameFields (['lev'], ['lev_edges'], '-v', newChmFileName)
-#        filesToMerge.append (newChmFileName)
-
          print "FILES TO MERGE: ", filesToMerge
          self.netCdfObject.mergeFilesIntoNewFile (filesToMerge, basePathWithDate + "1D." + resolution + ".nc")
 
@@ -292,34 +407,35 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
             if os.path.exists (file): os.remove(file)
 
                                                      
-   #---------------------------------------------------------------------------  
-   # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC
-   #
-   # DESCRIPTION: 
-   # Resolve the fake dimensions created during the GFIO remap operation
-   #---------------------------------------------------------------------------  
-   def resolveFakeDimensions (self, task):
+                
+   def resolveFakeDimensions (self, task):      
+      print "about to start threads for resolving dimensions..."
 
+      netCdfObject = GmiNetCdfFileTools ()
       exitMutexes = []
+      dimensions = ['time', 'lev', 'lat', 'lon']
+
       count = 0
       for prefix in self.PREFIXES:
-         for resolution in ["2x2.5", "1x1.25"]:
+
+         for resolution in ["2x2.5", "1x1.25", "0.625x0.5"]:
+
             fileName = self.basePath + prefix  + self.endPath + "." + resolution + ".nc"
             if not os.path.exists (fileName): raise fileName + " does not exist! ERROR"
 
-            print "Resolving dimensions for: ", fileName
-
-            if prefix == "tavg3_3d_chm_Fv":
-               outDims = ['time', 'lev', 'lat', 'lon']
+            if prefix == "tavg3_3d_trb_Ne"  or prefix == "tavg3_3d_mst_Ne" \
+                   or prefix == "tavg3_3d_mst_Ne_set2":
+               dimensions = ['time', 'lev_edges', 'lat', 'lon']
             else:
-               outDims = ['time', 'lev_edges', 'lat', 'lon']
+               dimensions = ['time', 'lev', 'lat', 'lon']
 
-            print "outDims: ", outDims
+            print "resolving dimensions for: ", fileName
+            print self.fieldMap [prefix]
 
             # for each file type fix the fake dimensions
             exitMutexes.append (thread.allocate_lock())
-            thread.start_new (self.netCdfObject.resolveFieldDimensions, \
-                (fileName, count, self.GEOS5FIELDS, outDims, exitMutexes[count]))
+            thread.start_new (netCdfObject.resolveFieldDimensions, \
+                (fileName, count, self.fieldMap[prefix], dimensions, exitMutexes[count]))
             
             count = count + 1
          
@@ -330,114 +446,82 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
          while not mutex.locked (): 
             pass
     
-
       print "All threads returned from resolveFieldDimensions"
 
-                
-   #-----------------------------------------------------------------------------
-   # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC
-   #
-   # DESCRIPTION: Basically, this is a wrapper routine for regridAndDumpHdfFiles
-   # routine.  The chm_Ne collection prefix is added to the list.
-   #-----------------------------------------------------------------------------    
-   def processChmNeFields (self, task):	
-      self.PREFIXES.append ("tavg3_3d_chm_Ne")
-      savePrefixes = self.PREFIXES # full list
-      # only process this collection, both resolutions
-      self.PREFIXES = ["tavg3_3d_chm_Ne"]  
-      print "Calling the parent routine..."
-      GmiGEOS5DasFields.regridAndDumpHdfFiles (self, task)
-      print "Done with the parent routine"
-      self.PREFIXES = savePrefixes
       
-      
-   #---------------------------------------------------------------------------  
-   # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC
-   #
-   # DESCRIPTION: There are collections that are already on the reduced FV 
-   # grid; these collections do not need to be regridded.
-   # This routine also renames the dimension variables (GFIO_remap does this)
-   #---------------------------------------------------------------------------  
-   def doDumpHdfEosToNetcdf (self, task):
-      
-      destinationPath = task.destinationPath +  "/" + task.year + "/" + task.month + "/"   
-      
-      for prefix in self.PREFIXES:
-      
-         fileName = self.basePath + prefix + self.endPath + ".hdf"
-         newFileName = self.basePath + prefix + self.endPath + ".1x1.25.hdf"
-         if not os.path.exists (newFileName): os.rename (fileName, newFileName)
-
-         returnCode = self.netCdfObject.dumpHdfEosToNetcdf (newFileName, destinationPath)
-         if returnCode != GmiAutomationConstants.SYS_SUCCESS:
-            raise "There was a problem converting to: ", ncFileName
-
-         ncFileName = self.basePath + prefix + self.endPath + ".1x1.25.nc"
-         
-         oldNames = ["TIME_EOSGRID", "XDim_EOSGRID", "YDim_EOSGRID", "Height_EOSGRID"]
-         newNames = ["time", "lon", "lat", "lev"]
-         for arg in ["-d", "-v"]:
-             self.netCdfObject.renameFields (oldNames, newNames, arg, ncFileName)
-
-         self.netCdfObject.changeTimeDimToUnlim (8, ncFileName, thread.allocate_lock(), "yes")
-
-
+               
    #---------------------------------------------------------------------------  
    # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC
    #
    # DESCRIPTION: 
-   # This routine calls an external program to calculate TAUCLI, TAUCLW,
-   # OPTDEPTH, and CLOUD at each resolution.
+   # This routine puts all cloud variables - TAUCLI, TAUCLW, CLOUD, and
+   # and calculated OPTDEPTH (TAUCLI+TAUCLW) for 0.625 only
+   # TAUCLI and TAUCLW are in tavg3_3d_cld_Nv
+   # and CLOUD is in tavg3_3d_cld_Nv+set2
    #---------------------------------------------------------------------------
-   def calculateOptDepthVarsAppendToCldV (self, task):
+   def extractCloudFieldsNativeGrid (self, task):
       constants = GmiAutomationConstants()
-      print "resolutions: ", self.RESOLUTIONS
-      for resolution in self.RESOLUTIONS:
-         inputFileString = task.sourcePath + "/" + task.year \
-                           + "/" + task.month + "/" + task.filePrefix + \
-                           ".tavg3_3d_chm_Fv." + task.year + task.month + \
-                           task.day + "." + resolution 
-         inputFile = inputFileString + ".nc"
-         cloudFile = inputFileString + ".cloud.nc"
-         tauFile = inputFileString + ".tau.nc"
 
-         systemCommand = constants.NCAPPATH + \
-                         "ncap -s \"CLOUD=(CFAN+CFCU+CFLS)\" " + \
-                         inputFile + " " + cloudFile
-         print systemCommand
-         returnCode = os.system (systemCommand)
-         if returnCode != constants.SYS_SUCCESS:
-            raise "There was a prolem calculating CLOUD"
+      resolution = '0.625x0.5'
+      
+      tauInputFile = task.sourcePath + "/" + task.year \
+          + "/" + task.month + "/" + task.filePrefix + \
+          ".tavg3_3d_cld_Nv." + task.year + task.month + \
+          task.day + "." + resolution + ".nc"
+      cloudInputFile = task.sourcePath + "/" + task.year \
+          + "/" + task.month + "/" + task.filePrefix + \
+          ".tavg3_3d_cld_Nv_set2." + task.year + task.month + \
+          task.day + "." + resolution + ".nc"
+
+      cloudFileOut = task.sourcePath + "/" + task.year \
+          + "/" + task.month + "/" + task.filePrefix + \
+          ".CLOUD." + task.year + task.month + \
+          task.day + "." + resolution + ".nc"
+
+      cloudFileOut1 = task.sourcePath + "/" + task.year \
+          + "/" + task.month + "/" + task.filePrefix + \
+          ".CLOUD1." + task.year + task.month + \
+          task.day + "." + resolution + ".nc"
+
+      cloudFileOut2 = task.sourcePath + "/" + task.year \
+          + "/" + task.month + "/" + task.filePrefix + \
+          ".CLOUD2." + task.year + task.month + \
+          task.day + "." + resolution + ".nc"
+
+      returnCode = self.netCdfObject.extractSubsetOfVariables \
+          (["TAUCLI", "TAUCLW"], tauInputFile, cloudFileOut1)
+
+      print "returnCode after TAUCLI and TAUCLW extraction: ", returnCode
+
+      returnCode = self.netCdfObject.extractSubsetOfVariables \
+          (["CLOUD"], cloudInputFile, cloudFileOut2)
+
+      print "returnCode after CLOUD extraction: ", returnCode 
+
+      optDepthFile = task.sourcePath + "/" + task.year + "/" + task.month + \
+          "/" + task.filePrefix + ".tavg3_3d_optDepth." + task.year + \
+          task.month + task.day + "." + resolution + ".nc"
+      systemCommand = constants.NCAPPATH + \
+          "ncap -s \"OPTDEPTH=(TAUCLI+TAUCLW)\" " + \
+          cloudFileOut1 + " " + optDepthFile
          
-         returnCode = self.netCdfObject.extractSubsetOfVariables \
-                      (["TAUCLI", "TAUCLW"], inputFile, tauFile)
-         returnCode = self.netCdfObject.extractSubsetOfVariables \
-                      (["CLOUD"], cloudFile, cloudFile)
-         returnCode = self.netCdfObject.mergeFilesIntoNewFile([cloudFile, tauFile], cloudFile)
-         if returnCode != self.constants.NOERROR:
-            raise "There was a problem merging CLOUD with the other 3D fields"
+      print systemCommand
+      returnCode = os.system (systemCommand)
+      print "returnCode from ncap command which creates OPTDEPTH: ", returnCode
 
-         optDepthFile = task.sourcePath + "/" + task.year + "/" + task.month + \
-                        "/" + task.filePrefix + ".tavg3_3d_cloud." + task.year + \
-                        task.month + task.day + "." + resolution + ".nc"
-         systemCommand = constants.NCAPPATH + \
-                         "ncap -s \"OPTDEPTH=(TAUCLI+TAUCLW)*CLOUD\" " + \
-                         cloudFile + " " + optDepthFile
+
+      # put OPTDEPTH into cloudFileOut
+      returnCode = self.netCdfObject.mergeFilesIntoNewFile ([optDepthFile, cloudFileOut1, cloudFileOut2], \
+                                                               cloudFileOut)
+      print "returnCode from merging files: ", returnCode
+      
+      # this was probably nice, but then stopped working at some point
+      #self.netCdfObject.addAttributesToFile(cloudFileOut, "visible_optical_depth", "1", "OPTDEPTH")
          
-         returnCode = os.system (systemCommand)
-         if returnCode != constants.SYS_SUCCESS:
-            raise "There was a problem calculating OPTDEPTH using ncap"
-
-         os.remove(cloudFile)  
-
-         # this was probably nice, but then stopped working at some point
-         #self.netCdfObject.addAttributesToFile(optDepthFile, "visible_optical_depth", "1", "OPTDEPTH")
-         #self.netCdfObject.addAttributesToFile(optDepthFile, "cloud_area_fraction", "1", "CLOUD")
-            
-      self.GEOS5FIELDS.append('CLOUD')
-      self.GEOS5FIELDS.append('OPTDEPTH')
-      self.PREFIXES.append ("tavg3_3d_cloud")
-         
+      # Since this file will not be part of the regular collections
+      # make the time dimension a record dim here
+      returnCode = self.netCdfObject.makeDimensionRecordDimension (cloudFileOut, 'time')
+      print "returnCode from making time record dimension: ", returnCode
          
    #---------------------------------------------------------------------------  
    # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC
@@ -452,6 +536,7 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
       systemCommands = []
 
       for resolution in self.RESOLUTIONS:
+
          exitMutexes.append (thread.allocate_lock ())
          thread.start_new (self.mergePrefixes, \
                            (task, resolution, exitMutexes[count]))
@@ -497,8 +582,12 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
                     resolution + ".nc"
 
       print "merging the files: ", fileNames
+
       self.netCdfObject.mergeFilesIntoNewFile ( \
                fileNames, outFileName)
          
       print "mergePrefixes ACQUIRING MUTEX"
       exitMutex.acquire ()
+
+
+

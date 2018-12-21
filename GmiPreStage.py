@@ -17,11 +17,6 @@ from GmiAutomationConstants import GmiAutomationConstants
 from GmiMetFieldTask import GmiMetFieldTask
 from GmiAutomationTools import GmiAutomationTools
 
-# These are for GEOS4 task processing
-from GmiDasFieldsInstantSurface import GmiDasFieldsInstantSurface
-from GmiDasFieldsAveragedSurface import GmiDasFieldsAveragedSurface
-from GmiDasFieldsAveragedEta import GmiDasFieldsAveragedEta
-
 import os
 
 class GmiPreStage:
@@ -47,54 +42,6 @@ class GmiPreStage:
    
    def __del__(self):
       pass
-
-   #---------------------------------------------------------------------------  
-   # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC
-   #
-   # DESCRIPTION: 
-   # This routine will prestage the task data by spawning a new process
-   # for each type of data in a DAS task.
-   # This task will verify that a task is complete, but the caller of this
-   # routine should not attempt to pass an invalid array element
-   #---------------------------------------------------------------------------   
-   
-   def preStageDasTask (self, task, defaultDasInputPath, instantSurfaceDas, \
-                        averagedSurfaceDas, \
-                        averagedEtaDas):
-      
-      # verify the task as complete
-      returnCode = task.verifyCompleteness ()
-      if returnCode != self.constants.NOERROR:
-         return self.constants.INVALIDINPUT
-      
-      # prestage instant surface fields
-      instantSurfaceDas = GmiDasFieldsInstantSurface (defaultDasInputPath, instantSurfaceDas)
-      path = task.sourcePath + instantSurfaceDas.LLKDIRECTORY + "/Y" + task.year + "/M" + task.month 
-      pattern = task.filePrefix + instantSurfaceDas.PREFIX + task.year + task.month + task.day 
-      returnCode = self.preStageData (path, pattern)
-      if returnCode != self.constants.NOERROR:
-         print "\nError pre-staging instant surface fields\n"
-         return returnCode
-      
-      # prestage averaged surface fields
-      averagedSurfaceDas = GmiDasFieldsAveragedSurface (defaultDasInputPath, averagedSurfaceDas)
-      path = task.sourcePath + averagedSurfaceDas.LLKDIRECTORY + "/Y" + task.year + "/M" + task.month 
-      pattern = task.filePrefix + averagedSurfaceDas.PREFIX + task.year + task.month + task.day 
-      returnCode = self.preStageData (path, pattern)
-      if returnCode != self.constants.NOERROR:
-         print "\nError pre-staging averaged surface fields\n"
-         return returnCode
-       
-      # prestage averaged eta fields 
-      averagedEtaDas = GmiDasFieldsAveragedEta (defaultDasInputPath, averagedEtaDas)
-      path = task.sourcePath + averagedEtaDas.LLKDIRECTORY + "/Y" + task.year + "/M" + task.month 
-      pattern = task.filePrefix + averagedEtaDas.PREFIX + task.year + task.month + task.day 
-      returnCode = self.preStageData (path, pattern)
-      if returnCode != self.constants.NOERROR:
-         print "\n Error pre-staging averaged eta fields\n"
-         return returnCode
-       
-      return self.constants.NOERROR
    
    #---------------------------------------------------------------------------  
    # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC

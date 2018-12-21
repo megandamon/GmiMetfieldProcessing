@@ -100,6 +100,7 @@ class GmiMetFieldTask:
       
       return GmiMetFieldTask.constants.NOERROR
       
+      
    #---------------------------------------------------------------------------  
    # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC
    #
@@ -114,7 +115,7 @@ class GmiMetFieldTask:
       if len (self.year) != 4 or len (self.month) != 2 or len (self.day) != 2:
          raise self.constants.INVALIDINPUT   
       
-      returnPath = '/Y' + self.year + '/M' + self.month + '/D' + self.day
+      returnPath = '/Y' + self.year + '/M' + self.month 
       return returnPath
 
 

@@ -70,6 +70,7 @@ class GmiDasTasks:
                     archiveDirectory, remoteSystem, levsFile, constFieldsPath, \
                     mailTo, logFile, \
                     configFile, taskFile, transferFile):
+
       try:
 
          #---------------------------------------------------------------------------  
@@ -77,56 +78,53 @@ class GmiDasTasks:
          #---------------------------------------------------------------------------  
          for dasObject in dasObjects:
             dasObject.SOURCESTYLE = "GMI"
+         #---------------------------------------------------------------------------  
 
          self.basePath = task.destinationPath + "/" + \
                          task.year + "/" + task.month + \
                          "/" + task.filePrefix + "."
-         print transferFile
-         #---------------------------------------------------------------------------  
 
          print "Creating necessary directories ..."
-         #self.createDirectories (task, remoteSystem, archiveDirectory, transferFile, \
-         #                        processDirectory)
+         self.createDirectories (task, remoteSystem, archiveDirectory, transferFile, \
+                                 processDirectory)
          print "Done creating necessary directories ..."
 
          # By now, the data has been staged
          task.sourcePath = task.destinationPath
          
          print "Checking for DAS source files ..."
-         #self.checkSourceFiles (task, dasObjects, mailTo)
+         self.checkSourceFiles (task, dasObjects, mailTo)
          print "Done checking for DAS source files ..."
 
          print "Distributed processing ..."
          self.doProcessing (task, dasObjects, destPath)
-         print "Done with distributed processing ..."
-         
-
-         print "Merging across DAS types ..."
-         self.mergeAcrossDataTypes (task, dasObjects, mailTo, levsFile)
-         print "Done merging across DAS types ..."
-
-
-         print "Adding lat,lon,lev,lev_edges, and time to 2x2.5 file"
-         self.add1DVars (task)
-         print "Done adding lat,lon,lev,lev_edges, and time to 2x2.5 file"
-
-
-         print "Remapping the lon coordinate"
-         self.remapData (task, mailTo, levsFile)
-         print "Done remapping the lon coordinate"
-
-         print "Add constants fields to file"
-         self.appendConstantFields (task, constFieldsPath)
-         print "Done adding constant fields to file"
+         print "Done with distributed processing ..."         
 
          print "Doing optical depth calculation"
          self.doOpticalDepth (task, dasObjects)
          print "Done calculating optical depth"   
 
-      
+         # NEED TO MAKE SURE that OPTDEPTH  gets carried along
+
+         print "Merging across DAS types ..."
+         self.mergeAcrossDataTypes (task, dasObjects, mailTo, levsFile)
+         print "Done merging across DAS types ..."
+
+         print "Adding lat,lev,and time file"
+         self.add1DVars (task)
+         print "Done adding lat,lev, and time"
+         
+         print "Remapping the lon coordinate"
+         self.remapData (task, mailTo, levsFile)
+         print "Done remapping the lon coordinate"
+
          print "rename Fields..."
          self.renameFields (task)
          print "Done renaming Fields..."
+
+         print "add longtitude array to all files"
+         self.addLongitudeToArray (task)
+         print "done adding longitude array to all files"
 
          print "Checking output files ..."
          self.checkFiles (task)
@@ -137,14 +135,13 @@ class GmiDasTasks:
                                   remoteSystem, mailTo, logFile, \
                                   transferFile, processDirectory)
          print "Done archiving the finished met fields and logging ..."
-         
+
          self.removeInterFiles (task, dasObjects)
          print "Done removing intermmediate files ..."
 
          print "Removing processed files ..."
          self.removeFiles (task)
          print "Done removing processed files ..."
-
 
          print "Updating the config file..."
          self.updateConfigFile (task, configFile)
@@ -154,23 +151,14 @@ class GmiDasTasks:
          self.removeTaskFromAttempts (task, taskFile, mailTo)
          print "Done removing task from list..."
 
-         print "Remove cloud prefix from avg3D"
-
-         #For testing only 
-         #cloudPrefix = "tavg3_3d_cloud"
-         #cloudType = "avg3D"
-         #for dasObject in dasObjects:
-         #   if dasObject.TYPE == cloudType
-         #      print "appending: ", cloudPrefix
-         #      dasObject.PREFIXES.append(cloudPrefix)
-
-         self.removeCloudFromPrefixes (dasObjects)
-         print "Done removing cloud prefix from avg3D"
+         print "Removing processing prefixes and fields"
+         self.removeExtraPrefixesAndFields (dasObjects)
+         print "Done removing processing prefixes and fields"
 
          print "Mailing success message..."
          self.ioRoutines.mailMessage ("Succesful completion of the task: " +  \
                                          task.year + " " + task.month + " " + \
-                                         task.day, "MERRA Success", mailTo)
+                                         task.day, "MERRA-2 Success", mailTo)
          print "Done mailing success message..."
          
       except Exception, error:
@@ -180,6 +168,21 @@ class GmiDasTasks:
                                          mailTo)
                         
              
+
+   def addLongitudeToArray (self, task):
+      print "in addLongitudeToArray"
+
+      for resolution in ["2x2.5", "1x1.25", "0.625x0.5"]:
+         lonFile = "netcdf/lon." + resolution + ".nc"
+         mainFile = self.basePath + task.year + task.month + \
+             task.day + "." + resolution + ".nc"
+
+         returnCode = self.netCdfTools.mergeFilesIntoNewFile([lonFile, mainFile], \
+                                                                mainFile)
+         print "returnCode: ", returnCode
+
+
+
    #---------------------------------------------------------------------------  
    # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC
    #
@@ -187,18 +190,25 @@ class GmiDasTasks:
    # Adds 1D vars (like lat, lon, time, etc.) to the files.
    # the 1D var files are created during processing of the avg3d objects
    #---------------------------------------------------------------------------  
-   def add1DVars (self, task):                            
-      sourceFile = self.basePath + task.year + task.month + \
-          task.day + ".2x2.5.nc" 
-      basePath = self.basePath + task.year + task.month + task.day + "."       
-      oneDFile = basePath + "1D.2x2.5.nc"
-        
-      fileList = []
-      fileList.append (sourceFile)
-      fileList.append (oneDFile)
-      returnCode = self.netCdfTools.mergeFilesIntoNewFile(fileList, sourceFile)
-      if returnCode != self.autoConstants.NOERROR:
-         raise "Problem adding 1D variables!", returnCode
+   def add1DVars (self, task):            
+
+      #MERRA2_400.20160101.1D.0.625x0.5.nc       
+      #MERRA2_400.20160101.0.625x0.5.nc   
+
+      for resolution in ["2x2.5", "1x1.25", "0.625x0.5"]:
+
+         basePathWithDate = self.basePath + task.year + task.month + \
+             task.day + "."
+
+         oneDFile = basePathWithDate + "1D." + resolution + ".nc"
+         sourceFile = basePathWithDate +  resolution + ".nc"
+
+         fileList = []
+         fileList.append (sourceFile)
+         fileList.append (oneDFile)
+         returnCode = self.netCdfTools.mergeFilesIntoNewFile(fileList, sourceFile)
+         if returnCode != self.autoConstants.NOERROR:
+            raise "Problem adding 1D variables!", returnCode
                          
    #---------------------------------------------------------------------------  
    # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC
@@ -208,31 +218,12 @@ class GmiDasTasks:
    #---------------------------------------------------------------------------  
    def doOpticalDepth (self, task, dasObjects):
       cloudObject = GmiCloud()
-      returnCode = cloudObject.calculate2DegreeFrom1DegreeOptDepth (task.destinationPath, \
-                                                                    task.year, task.month, \
-                                                                    task.day, task.filePrefix)
+      returnCode = cloudObject.createCloudVars (task.destinationPath, \
+                                                   task.year, task.month, \
+                                                   task.day, task.filePrefix)
       if returnCode != self.autoConstants.NOERROR:
          raise "Problem calculating optical depth: ", returnCode
 
-
-   #---------------------------------------------------------------------------  
-   # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC
-   #
-   # DESCRIPTION: 
-   # The 2D land fields in MERRA are constant and are used
-   # in the GMI model to calculate time varying LWI
-   #---------------------------------------------------------------------------  
-   def appendConstantFields (self, task, constFilePath):
-      for resolution in GmiGEOS5DasFields.RESOLUTIONS:
-         fileList = []
-         fileList.append (constFilePath + "/" + \
-                          "MERRA300.prod.assim.const_2d_asm_Nx.00000000." + \
-                          resolution + ".nc")
-         fileList.append (self.basePath + task.year + task.month + \
-                          task.day + "." + resolution + ".nc")
-         returnCode = self.netCdfTools.mergeFilesIntoNewFile (fileList, fileList[1])
-         if returnCode != self.autoConstants.NOERROR:
-            raise "Problem merging constant fields into processd file: ", fileList[1]
 
    #---------------------------------------------------------------------------  
    # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC
@@ -261,10 +252,13 @@ class GmiDasTasks:
                           transferFile, processDirectory):
       fullDestination = task.destinationPath + "/" + task.year + "/" \
                         + task.month
+
+
       returnCode = self.gmiAutomationTool.createDirectoryStructure \
                    (fullDestination)
       if returnCode != self.autoConstants.NOERROR:
          raise "Problem making the directory: ", fullDestination
+      
 
       # create the three directories (one for each res) on the
       sysCommands = []
@@ -273,23 +267,23 @@ class GmiDasTasks:
                       (remoteSystem, archiveDirectory + "/" + resolution \
                        + "/" + task.year + "/"))
 
-      sleep(30)
       uniqueId = str(time()) + str(random.random())
       newTransferFile = transferFile + "." + uniqueId
       jobId = None
+
+
       try:
+         print "does it exist: ", os.path.exists(newTransferFile)
          self.ioRoutines.appendLinesToFileAndRename (transferFile, \
                                                      sysCommands, \
                                                      newTransferFile)
-         print "return from appendLinesToFile"
-         print "does it exist: ", os.path.exists(newTransferFile)
          jobId = self.comUtilities.qsubFileAndWait (newTransferFile)
-         print "Created directories: ", newTransferFile
       except: raise "Problem creating directories"
 
       # remove the transfer and output file
       sleepTimes = 0
-      transferOutputFile = processDirectory + "/transfer.e" + jobId[0:6]
+      transferOutputFile = processDirectory + "/slurm-" + jobId[0:7] + ".out"
+      print transferOutputFile
       while not os.path.exists (transferOutputFile) and \
                 sleepTimes < 12:
          sleep(30)
@@ -363,7 +357,7 @@ class GmiDasTasks:
       for resolution in GmiGEOS5DasFields.RESOLUTIONS:
          fullArchive = archiveDirectory + "/" + resolution + "/" + task.year
          print "fullArchive: ", fullArchive
-         systemCommand = "ssh discover29 cp " + fullDestination + "/" \
+         systemCommand = "ssh discover01 cp " + fullDestination + "/" \
              + task.filePrefix + "." + task.year \
              + task.month + task.day + "." + resolution + ".nc " \
              + fullArchive
@@ -471,13 +465,13 @@ class GmiDasTasks:
    def remapData (self, task, mailTo, levsFile):
       count = 0
       exitMutexes = []
-      for resolution in GmiGEOS5DasFields.RESOLUTIONS:
+      for resolution in ["2x2.5", "1x1.25", "0.625x0.5"]:
          sourceFile = self.basePath + task.year + task.month + \
-                      task.day + "." + resolution + ".nc"
+             task.day + "." + resolution + ".nc"
          exitMutexes.append (thread.allocate_lock())
          thread.start_new (self.netCdfTools.remapDataOnLonCoordNew, \
-                           (sourceFile, levsFile, task.filePrefix, \
-                            exitMutexes[count]))                           
+                              (sourceFile, levsFile, task.filePrefix, \
+                                  exitMutexes[count]))                           
          count = count + 1
          
       #----------------------------------------------------------------
@@ -487,16 +481,31 @@ class GmiDasTasks:
          while not mutex.locked (): 
             pass
 
-   def removeCloudFromPrefixes (self, dasObjects):
-      cloudPrefix = "tavg3_3d_cloud"
-      cloudType = "avg3D"
+
+   
+   def removeExtraPrefixesAndFields (self, dasObjects):
+
       for dasObject in dasObjects:
-         if dasObject.TYPE == cloudType:
-            dasObject.PREFIXES.remove(cloudPrefix)
-            print "Removed ", cloudPrefix, " from ", cloudType
-         else:
-            print "Not removing: ", dasObject.TYPE
-      
+         if dasObject.TYPE == "avg3D":
+            dasObject.PREFIXES.remove("tavg3_3d_cld_Nv_set2")
+            print "Removed tavg3_3d_cld_Nv_set2"
+            dasObject.PREFIXES.remove("tavg3_3d_mst_Ne_set2")
+            print "Removed tavg3_3d_mst_Ne_set2"
+            dasObject.PREFIXES.remove("tavg3_3d_asm_Nv_set2")
+            print "Removed tavg3_3d_asm_Nv_set2"
+
+         if dasObject.TYPE == "inst2D":
+            dasObject.PREFIXES.remove("const_2d_asm_Nx")
+            print "Removed const_2d_asm_Nx"
+            dasObject.GEOS5FIELDS.remove ("FRLAKE")
+            print "Removed FRLAKE"
+            dasObject.GEOS5FIELDS.remove ("FRLAND")
+            print "Removed FRLAND"
+            dasObject.GEOS5FIELDS.remove ("FRLANDICE")
+            print "Removed FRLANDICE"
+            dasObject.GEOS5FIELDS.remove ("FROCEAN")
+            print "Removed FROCEAN"
+
    #----------------------------------------------------------------
    # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC#
    # Kicks off the three GEOS5-DAS objects in the order that seems
@@ -510,8 +519,9 @@ class GmiDasTasks:
 
       for dasObject in dasObjects:
          print "processing dasObject: ", dasObject.TYPE
-         if dasObject.TYPE == "avg3D" or dasObject.TYPE == "inst2D":
 
+#         if dasObject.TYPE == "inst2D": # for testing
+         if dasObject.TYPE == "avg3D" or dasObject.TYPE == "inst2D":
 
             print dasObject.TYPE, " started! "
             
@@ -523,12 +533,12 @@ class GmiDasTasks:
             
             threadCount = threadCount + 1
       
+      
       #C.*
       #we know the first thread is inst2D, the
       # avg3D takes awhile, so start the avg2D
       while not exitMutexes[0].locked ():
          pass
-      
 
       #C.* now start avg2D, it runs after
       # inst2D
@@ -553,8 +563,60 @@ class GmiDasTasks:
 
 
    #----------------------------------------------------------------
+   # AUTHORS: Megan Damon NASA SSAI
+   #----------------------------------------------------------------
+   def copyMerra2DataToWorkingDir (self, task, dasObjects, remoteSystem, \
+                       transferFile, processDirectory, exitMutex, \
+                       mailTo, ftpScript):
+
+
+      print "Copying Merra2 Data"
+
+      print task.addDatePathToBasePath(task.sourcePath)
+
+
+      fullDestination = task.destinationPath + "/" + task.year + "/" + task.month
+      returnCode = self.gmiAutomationTool.createDirectoryStructure (fullDestination)
+      if returnCode != self.autoConstants.NOERROR:
+         raise "Problem making the directory: ", fullDestination
+
+      print fullDestination
+      
+      commands = self.constructCpCmdMerra2 (task, dasObjects)
+      for command in commands:
+         print command
+         returnCode = os.system(command)
+         if returnCode != 0:
+            print "Current command failed!"
+            sys.exit(0)
+
+         
+   #----------------------------------------------------------------
    # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC#
-   # Prestages DAS files from a remote system.  Needs a transfer
+   # GEOS5-specific.
+   #----------------------------------------------------------------
+   def constructCpCmdMerra2 (self, task, dasObjects):
+      filesToTransfer = []
+      scpCmd = "scp "
+      fullDestination = task.destinationPath + "/" + task.year + "/" + task.month
+      
+      dasDir = dasObjects[0].DIR
+      
+      for dasObject in dasObjects:
+         for prefix in dasObject.PREFIXES:
+            filesToTransfer.append (scpCmd + task.sourcePath + \
+                                       "/" + \
+                                       "Y" + task.year + "/M" + \
+                                       task.month + "/" + task.filePrefix \
+                                       + "." + prefix + "." + \
+                                       task.year + task.month + \
+                                       task.day + "*nc4 " + fullDestination)
+      
+      return filesToTransfer
+
+   #----------------------------------------------------------------
+   # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC#
+   # Prestages DAS files from a remote system.Needs a transfer
    # file template and assumes bbscp as transfer protocol.
    #----------------------------------------------------------------
    def preStageAllDas (self, task, dasObjects, remoteSystem, \
@@ -642,6 +704,8 @@ class GmiDasTasks:
          print "Checking source files for ", dasObject.TYPE
          dasObject.checkGEOSSourceFiles (task)
 
+
+  
          
    #----------------------------------------------------------------
    # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC#

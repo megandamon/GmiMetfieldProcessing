@@ -80,12 +80,12 @@ class GmiAutomationConstants:
    QSTATPATH = "/usr/slurm/bin/"
    BASHPATH = "/usr/local/bin/bash"
    PODSPATH = "/usr/local/other/pods/"
-   OPTEXEC = "/discover/nobackup/mrdamon/Devel/GmiAutomation/GEOS5DAS-discover/GEOS_Chem/Code/OptDepth.x"
-
+   #OPTEXEC = "/discover/nobackup/mrdamon/Devel/GmiAutomation/GEOS5DAS-discover/GEOS_Chem/CodeNew/Main"
+   OPTEXEC = "/discover/nobackup/mrdamon/Devel/GmiAutomation/GEOS5DAS-discover/GEOS_Chem/CodeNewRegridTau/Main"
    # other
    TMPPATH = "/tmp/" 
    FINAL_TMPPATH = "/home/mrdamon/ProcessMerra300/tmp/"
-   ENVFILE = "/home/mrdamon/GmiMetfieldProcessing/loadEnv"
+   ENVFILE = "/home/mrdamon/ProcessMerra300/loadEnv"
 
    #---------------------------------------------------------------------------  
    # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC

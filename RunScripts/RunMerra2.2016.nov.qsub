@@ -1,0 +1,20 @@
+#!/usr/local/bin/bash
+
+#SBATCH -A a930b
+#PBS -N M2.2016.nov.1
+#SBATCH --partition=compute
+#SBATCH --qos=high
+#SBATCH --nodes=1
+#SBATCH --constraint=sp3
+#SBATCH --tasks-per-node=16
+#SBATCH --time=24:00:00 
+
+
+echo "running"
+cd /discover/nobackup/mrdamon/MERRA2
+pwd
+
+export year=2016
+echo "Year is: ", $year
+echo "2016 nov is starting  " | mail -s "MERRA-2 processing starting" megandamon@gmail.com
+for day in 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15 ; do ./RunMerra2Processing.run configScratch/config.201611$day.in | tee stdout.2016.nov.1.out; done

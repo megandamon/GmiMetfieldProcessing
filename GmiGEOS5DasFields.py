@@ -38,9 +38,9 @@ class GmiGEOS5DasFields:
    #---------------------------------------------------------------------------  
 
 
-   RESOLUTIONS = ['2x2.5', '1x1.25']
-   oldFieldNames = ['TROPPB', 'TS']
-   newFieldNames = ['TROPP', 'TSKIN']
+   RESOLUTIONS = ['2x2.5', '1x1.25', '0.625x0.5']
+   oldFieldNames = ['TROPPB', 'TS', 'SWGNT', 'PARDRLAND', 'PARDFLAND', 'lon']
+   newFieldNames = ['TROPP', 'TSKIN', 'SWGNET', 'PARDR', 'PARDF', 'lon_old']
    longitude = zeros(144)
    longitude[:] = [0, 2.5, 5, 7.5, 10, 12.5, 15, 17.5, 20, 22.5, 25, 27.5, 30, \
                         32.5, 35, 37.5, 40, 42.5, 45, 47.5, 50, 52.5, 55, 57.5, 60, 62.5, 65, \
@@ -126,13 +126,13 @@ class GmiGEOS5DasFields:
          if len(self.RECORDS) != 0:
             print "Checking records"
             for record in self.RECORDS:
-               fileString = fileStringPre + "_" + record + "z.hdf"
+               fileString = fileStringPre + "_" + record + ".nc4"
                theFile = fullSourcePath + fileString
                if not os.path.exists (theFile):
                   print "check file parent: ", theFile
                   raise self.constants.NOSUCHFILE
          else:
-            fileString = fileStringPre + ".hdf"
+            fileString = fileStringPre + ".nc4"
             theFile = fullSourcePath + fileString
             if not os.path.exists (theFile):
                print "check file parent: ", theFile
@@ -144,7 +144,7 @@ class GmiGEOS5DasFields:
 
    def makeTimeDimRecordDim (self, task):
       netCdfObject = GmiNetCdfFileTools ()
-      for resolution in ["2x2.5", "1x1.25"]:
+      for resolution in ["2x2.5", "1x1.25", "0.625x0.5"]:
          fileName = self.basePath + self.GMIPREFIX + self.endPath + "." + \
              resolution + ".nc"
          netCdfObject.makeDimensionRecordDimension (fileName, 'time')
@@ -442,6 +442,7 @@ class GmiGEOS5DasFields:
       systemCommands = []
       count = 0
       # process each time record
+#      for resolution in [ "1x1.25", "2x2.5" ]:
       for resolution in self.RESOLUTIONS:
 
          # process each file prefix
@@ -454,20 +455,22 @@ class GmiGEOS5DasFields:
             sourceFile = destinationPath + "/" + \
                          fileString + \
                          "hdf"
+            print "sourceFile: ", sourceFile 
             exitMutexes.append (thread.allocate_lock())
-
+            
             thread.start_new(gmiNetCdfObject.doHdf5ToHdf4,\
-                              (sourceFile, \
-                              exitMutexes[count]))
+                                (sourceFile, \
+                                    exitMutexes[count]))
                              
             count = count + 1
-
+            
+ 
 
       #----------------------------------------------------------------
       #  Wait for all three threads before proceeding 
       #----------------------------------------------------------------
       for mutex in exitMutexes:
-         while not mutex.locked (): 
+        while not mutex.locked (): 
             pass
 
 
@@ -509,7 +512,7 @@ class GmiGEOS5DasFields:
          
          fileString = task.filePrefix + "." + prefix + \
                       "." + task.year + task.month + task.day + \
-                      ".hdf"
+                      ".nc4"
          
          print fileString
              

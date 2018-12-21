@@ -18,7 +18,7 @@ import datetime
 import re
 from numpy import *
 from pynetcdf import *
-#from netCDF4 import Dataset
+import subprocess
 
 
 from GmiAutomationConstants import GmiAutomationConstants
@@ -40,9 +40,11 @@ class GmiNetCdfFileTools:
       self.ioRoutines = IoRoutines ()
       self.utilities = CommonUtilities ()
 
+      self.shape576 = arange(576).reshape(576)
       self.shape288 = arange(288).reshape(288)
       self.shape144 = arange(144).reshape(144)
       self.shape72 = arange(72).reshape(72)
+
 
       self.ai = zeros(73)
       self.ai[:] =  [0.010000000, 0.02000000, 0.03270000, 0.04758500, 0.06600000, 0.08934500,  \
@@ -128,10 +130,15 @@ class GmiNetCdfFileTools:
       print "In resolveFieldDimensions!"
       varsFromFile = self.returnNetCdfFieldsAndDims (fileName)
       print "Thread ", seed, " found :",  varsFromFile  
-
+      
       filesToMerge = []
+
+
       # resolve dimensions on fields we care about
       for var in varsFromFile:
+         print "var: ", var
+         print "fieldArray: ", fieldArray
+
          if var == self.utilities.isValueInList (var, fieldArray) and len(varsFromFile[var]) == len(outDims):
             print "Thread ", seed, " is resolving : ", var
 
@@ -352,7 +359,7 @@ class GmiNetCdfFileTools:
          raise self.constants.BADSYSTEMRETURNCODE
 
 
-      systemCommand = self.constants.NCPDQPATH + "ncpdq -O -a " + dimName + ",record " \
+      systemCommand = self.constants.NCPDQPATH + "ncpdq -U -O -a " + dimName + ",record " \
           + fileName + " " + fileName + ".ncpdq.nc"
       print systemCommand
       if os.system (systemCommand) != self.constants.SYS_SUCCESS:
@@ -718,7 +725,7 @@ class GmiNetCdfFileTools:
              'sed /_FillValue/d | sed /ak/d | '
          
       systemCommand = systemCommand + self.constants.NCGENPATH  + \
-          'ncgen -o ' + newNcdfFileName
+          'ncgen -v2 -o ' + newNcdfFileName
 
 
       print systemCommand
@@ -1029,6 +1036,7 @@ class GmiNetCdfFileTools:
          return self.constants.NOSUCHFILE
       
       systemCommand = self.constants.NCRENAMEPATH + 'ncrename ' 
+      #systemCommand = 'ncrename ' 
       
       loopCounter = 0
       while loopCounter < len (oldNames):
@@ -1309,8 +1317,12 @@ class GmiNetCdfFileTools:
       if len (variablesToExtract) <= 0 or len (fileName) <= 0:
          return self.constants.INVALIDINPUT
 
+      print "file name exists?"
+      print fileName
       if not os.path.exists (fileName):
          return self.constants.NOSUCHFILE
+
+      print "after file name exists"
 
       # command to extract from netcdf file
       systemCommand = self.constants.NCKSPATH + 'ncks -v ' 
@@ -1330,10 +1342,12 @@ class GmiNetCdfFileTools:
       # do the extraction
       systemCommand = systemCommand +" " + fileName + " " + temporaryFileName
 
+ 
       print systemCommand
       systemReturnCode = os.system (systemCommand)
       print "system rtn code: ", systemReturnCode
-      #sys.exit(0)
+
+      print "checking systemREturnCode"
 
       if systemReturnCode != 0:
          return self.constants.BADSYSTEMRETURNCODE
@@ -1349,6 +1363,7 @@ class GmiNetCdfFileTools:
          print "There was a problem renaming ", temporaryFileName
          return self.constants.BADSYSTEMRETURNCODE
 
+      print "returning from extractSubsetOfVariables"
       return self.constants.NOERROR
     
    #---------------------------------------------------------------------------  
@@ -1382,20 +1397,26 @@ class GmiNetCdfFileTools:
          
          systemReturnCode = os.system (systemCommand)
          if systemReturnCode != 0:
+            print "BAD return code in mergeFilesIntoNewFile"
             return self.constants.BADSYSTEMRETURNCODE  
 
 
          loopCounter = loopCounter + 1
 
+      print "Last file: ", fileList[loopCounter]
+      print "newFileName: ", newFileName
+ 
       # rename the last file into the newFileName if they are not the same file
       if fileList [loopCounter] != newFileName:
          print "Renaming ", fileList [loopCounter], " to " , newFileName
          systemCommand = self.constants.MVPATH + 'mv ' + fileList [loopCounter] \
                          + ' ' + newFileName
+         print "before os.system"
          systemReturnCode = os.system (systemCommand)
+         print "after os.system"
          if systemReturnCode != 0:
             return self.constants.BADSYSTEMRETURNCODE  
-      
+      print "before return"
       return self.constants.NOERROR 
 
 
@@ -1483,7 +1504,7 @@ class GmiNetCdfFileTools:
    def flipDataOnCoord5D (self, fileName, variableName, exitMutex):
 
       if not os.path.exists (fileName):
-         print "remapDataOnLonCorrd... ACQURING MUTEX"
+         print "flipDataOnCoord5D... ACQURING MUTEX"
          exitMutex.acquire()
          raise self.constants.NOSUCHFILE
 
@@ -1525,6 +1546,7 @@ class GmiNetCdfFileTools:
 
       print "in remapDataOnLonCoordNew"
 
+      shape576 = self.shape576
       shape288 = self.shape288
       shape144 = self.shape144
       
@@ -1534,12 +1556,15 @@ class GmiNetCdfFileTools:
          exitMutex.acquire()
 
       print "Opening: ", fileName
+
+
         
       ncObject = NetCDFFile (fileName, 'as')
       lonValues = ncObject.variables["lon"]
       lonSize = len (lonValues)
 
       print "Done opening"
+
       
       # calculate the beg, middle and end of lon coord
       beg = 0
@@ -1551,6 +1576,17 @@ class GmiNetCdfFileTools:
       newCoords1 = [beg,mid]
       newCoords2 = [mid,end]
 
+
+      print oldCoords1
+      print newCoords1
+
+      print " "
+
+      print oldCoords2
+      print newCoords2
+
+
+
       print "before for"
       for variable in ncObject.variables:
          print "Reading: ", variable
@@ -1560,22 +1596,24 @@ class GmiNetCdfFileTools:
             
          if sizeOfVar == 3:
             if returnValues.shape[2:3] == shape288.shape or \
-                   returnValues.shape[2:3] == shape144.shape:
+                   returnValues.shape[2:3] == shape144.shape or \
+                   returnValues.shape[2:3] == shape576.shape :
                self.swapIndex3D (returnValues, oldCoords1, \
                                  oldCoords2, newCoords1, newCoords2)
 
          if sizeOfVar == 4:
             if returnValues.shape[3:4] == shape288.shape or \
-                   returnValues.shape[3:4] == shape144.shape:
+                   returnValues.shape[3:4] == shape144.shape or \
+                   returnValues.shape[3:4] == shape576.shape :
                self.swapIndex4D (returnValues, oldCoords1, \
                                  oldCoords2, newCoords1, newCoords2)
 
-      if re.search ("4x5", fileName):
-         globalAttr = "4x5x72"
-      elif re.search ("2x2.5", fileName):
+      if re.search ("2x2.5", fileName):
          globalAttr = "2x2%5x72"
       elif re.search ("1x1.25", fileName):
          globalAttr = "1x1%25x72"
+      elif re.search ("0.625x0.5", fileName):
+         globalAttr = "0%625x0%5x72"
       else:
          print "global attribute not supported!"
          print "remapDataOnLonCorrd... ACQURING MUTEX"
@@ -1583,7 +1621,7 @@ class GmiNetCdfFileTools:
          return self.constants.ERROR
 
       
-      setattr (ncObject, "Met_Data_Name", "GMAO_GEOS5MERRA300_" + globalAttr)
+      setattr (ncObject, "Met_Data_Name", "GMAO_GEOS5MERRA2_" + globalAttr)
 
       amNc = ncObject.createVariable('am', 'f', ('lev',))      
       counter = 0
@@ -1623,7 +1661,7 @@ class GmiNetCdfFileTools:
       
       print "Shape of field variable: ", theShape
       print "Shape of holder variable: ", newShape
-      
+   
       
       # get all the values from the NC variable and
       # save the part of the array we are about to
@@ -1674,168 +1712,6 @@ class GmiNetCdfFileTools:
       returnValues.assignValue (theValues)
 
       
-
-
-
-   #---------------------------------------------------------------------------  
-   # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC
-   #
-   # DESCRIPTION: 
-   # Remaps the data on the coordinate provided
-   # This routines needs refactoring and is GEOS5-DAS specific.
-   #---------------------------------------------------------------------------     
-   def remapDataOnLonCoord_288_144_72 (self, fileName, levFileName, exitMutex):
-
-      if not os.path.exists (fileName):
-         print "remapDataOnLonCorrd... ACQURING MUTEX"
-         exitMutex.acquire()
-         raise self.constants.NOSUCHFILE
-
-      
-      ncObject = NetCDFFile (fileName, 'as')
-      # get the dimensions of the file
-      timeValues = ncObject.variables['time']
-      timeSize = len(timeValues)
-      latValues = ncObject.variables["lat"]
-      latSize = len (latValues)
-      lonValues = ncObject.variables["lon"]
-      lonSize = len (lonValues)
-
-      # special consideration for the lev
-      # variable, not sure why this works
-      levValues = ncObject.variables['lev']
-      levSize = len(levValues) - 1
-
-      # add the extra layer on
-      extraValue = arange(1).reshape(1)
-      extraValue[0] = 73
-      levEValues = arange(72).reshape(72)
-      levEValues = concatenate ((levValues[:], extraValue))
-      levESize = size(levEValues) - 1
-
-      # calculate the beg, middle and end of longitude
-      # coordinate
-      beg = 0
-      mid = len (lonValues) / 2
-      end = lonSize
-
-      oldCoords1 = []
-      oldCoords2 = []
-      oldCoords1.append (mid)
-      oldCoords1.append (beg)
-      oldCoords2.append (end)
-      oldCoords2.append (mid)
-      newCoords1 = []
-      newCoords2 =[]
-      newCoords1.append (beg)
-      newCoords1.append (mid)
-      newCoords2.append (mid)
-      newCoords2.append (end)
-
-      for variable in ncObject.variables:
-         # get the values of the variable
-         values = ncObject.variables[variable]
-         print variable, values.shape
-         print len(values.shape)
-         # calculate the size of the variable
-         mySize = 1
-         for dimension in values.shape:
-            mySize = mySize * dimension
-
-         # treat the 2-D and 3-D different
-         if len (values.shape) == 3:
-            
-            if values.shape[2:3] == self.shape288.shape or \
-                   values.shape[2:3] == self.shape144.shape or \
-                   values.shape[2:3] == self.shape72.shape:
-               
-               returnValues = ncObject.variables[variable]
-
-               self.swapLastIndex3D (variable, ncObject, values, \
-                                     oldCoords1, oldCoords2, \
-                                     newCoords1, newCoords2, \
-                                     returnValues)
-
-         elif len (values.shape) == 4:
-            if values.shape[3:4] == self.shape288.shape or \
-                   values.shape[3:4] == self.shape144.shape or \
-                   values.shape[3:4] == self.shape72.shape:
-                  
-                  
-               # treat the 72 and 73 layer variables different
-               if values.shape[1] == 73:
-
-                  returnValues = ncObject.variables[variable]
-                  
-                  self.swapLastIndex4D (variable, ncObject, values, \
-                                        oldCoords1, oldCoords2, \
-                                        newCoords1, newCoords2, \
-                                        returnValues)
-
-               elif values.shape[1] == 72:
-
-
-                  returnValues = ncObject.variables[variable]
-                  
-                  self.swapLastIndex4D (variable, ncObject, values, \
-                                        oldCoords1, oldCoords2, \
-                                        newCoords1, newCoords2, \
-                                        returnValues)
-
-         elif len (values.shape) == 5:
-            print "found 5D var: ", values.shape
-            if values.shape[4:5] == self.shape288.shape or \
-                   values.shape[4:5] == self.shape144.shape or \
-                   values.shape[4:5] == self.shape72.shape:
-                  
-               returnValues = ncObject.variables[variable]
-               print "values match: ", values.shape
-               self.swapLastIndex5D (variable, ncObject, values, \
-                                     oldCoords1, oldCoords2, \
-                                     newCoords1, newCoords2, \
-                                     returnValues)
-
-         else:
-            print "The z dimension is not supported! "
-
-      # end variable for loop
-      
-               
-      if re.search ("4x5", fileName):
-         globalAttr = "4x5x72"
-      elif re.search ("2x2.5", fileName):
-         globalAttr = "2x2%5x72"
-      elif re.search ("1x1.25", fileName):
-         globalAttr = "1x1%25x72"
-      else:
-         print "global attribute not supported!"
-         print "remapDataOnLonCorrd... ACQURING MUTEX"
-         exitMutex.acquire()
-         return self.constants.ERROR
-
-      
-      setattr (ncObject, "Met_Data_Name", "GMAO_GEOS5MERRA300_" + globalAttr)
-
-      amNc = ncObject.createVariable('am', 'f', ('lev',))      
-      counter = 0
-      while counter < 72:
-         amNc [counter] = self.am [counter]
-         counter = counter + 1
-
-      bmNc = ncObject.createVariable('bm', 'f', ('lev',))      
-      counter = 0
-      while counter < 72:
-         bmNc [counter] = self.bm [counter]
-         counter = counter + 1
-
-
-      ncObject.sync()
-
-
-      print "remapDataOnLonCorrd... ACQURING MUTEX"
-      exitMutex.acquire()
-      return self.constants.NOERROR
-
    
    def copyVariableAttributesFromOrginal (self, originalNcObject, variable, newValues):
 

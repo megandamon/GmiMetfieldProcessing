@@ -93,6 +93,8 @@ class GmiGFIORemapTools:
          shortRes = "b"
       elif resolution == "1x1.25":
          shortRes = "c"
+      elif resolution == "0.625x0.5":
+         shortRes = "d"
       else:
          raise self.constants.INVALIDINPUT
       
@@ -132,6 +134,8 @@ class GmiGFIORemapTools:
          shortRes = "b"
       elif resolution == "1x1.25":
          shortRes = "c"
+      elif resolution == "0.625x0.5":
+         shortRes = "d"
       else:
          raise self.constants.INVALIDINPUT
       
