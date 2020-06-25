@@ -31,8 +31,8 @@ class IoRoutines():
                 raise 
             newFileLines = (fileLines + linesToAppend)
             self.writeToFile(newFileLines, newFile)
-            print newFileLines
-            print newFile
+            #print newFileLines
+            #print newFile
         except:
             raise 
 
@@ -79,7 +79,7 @@ class IoRoutines():
 
 
     def errorAndQuit(self, mesg, subject, mailTo, lockFile):
-        print mesg
+        #print mesg
         self.mailMessage(mesg, subject, mailTo)
         os.remove(lockFile)
         sys.exit(-1)

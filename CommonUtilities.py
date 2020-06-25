@@ -62,7 +62,7 @@ class CommonUtilities:
             raise self.constants.ERROR
 
         systemCommand = self.constants.QSUBPATH + "qsub " + fileName
-        print "in qsub : ", systemCommand
+#        print "in qsub : ", systemCommand
 
         try:            
             child = os.popen(systemCommand)
@@ -87,7 +87,7 @@ class CommonUtilities:
                        ' ".borg" | ' + self.constants.AWKPATH + \
                        "awk '{print $1}'"
 
-        print qstatCommand
+        #print qstatCommand
     
         child = os.popen(qstatCommand)
 

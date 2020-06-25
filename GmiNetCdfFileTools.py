@@ -1,3 +1,4 @@
+
 #!/usr/bin/python
 
 #------------------------------------------------------------------------------
@@ -17,7 +18,7 @@ import sys
 import datetime
 import re
 from numpy import *
-from pynetcdf import *
+#from pynetcdf import *
 import subprocess
 
 
@@ -127,43 +128,38 @@ class GmiNetCdfFileTools:
    #---------------------------------------------------------------------------    
    def resolveFieldDimensions (self, fileName, seed, fieldArray, outDims, exitMutex):
 
-      print "In resolveFieldDimensions!"
-      varsFromFile = self.returnNetCdfFieldsAndDims (fileName)
-      print "Thread ", seed, " found :",  varsFromFile  
-      
+      varsFromFile = self.returnNetCdfFieldsAndDims (fileName)      
       filesToMerge = []
 
 
       # resolve dimensions on fields we care about
       for var in varsFromFile:
-         print "var: ", var
-         print "fieldArray: ", fieldArray
+#         print "var: ", var
+#         print "fieldArray: ", fieldArray
 
          if var == self.utilities.isValueInList (var, fieldArray) and len(varsFromFile[var]) == len(outDims):
-            print "Thread ", seed, " is resolving : ", var
+#            print "Thread ", seed, " is resolving : ", var
 
             # extract field
             newFileName = fileName + "." + var + ".nc"
-            print newFileName
+#            print newFileName
             filesToMerge.append(newFileName)
             self.extractSubsetOfVariables ([var], fileName, newFileName)
 
             # rename dimensions in new file
             self.renameFields (varsFromFile[var], outDims, '-d', newFileName)
 
-      print "files to merge: ", filesToMerge
+#      print "files to merge: ", filesToMerge
       if len(filesToMerge) > 1: 
-         print "MERGING"
+         print ("MERGING")
          systemCommand = "mv " + fileName + " " + fileName + ".orig.nc"
          returnCode = os.system(systemCommand)
          self.mergeFilesIntoNewFile (filesToMerge, fileName)
       else:
-         print "NOT MERGING"
+         print ("NOT MERGING")
          systemCommand = "mv " + newFileName + " " + fileName
          returnCode = os.system(systemCommand)
 
-
-      print "resolveFieldDimensions acquiring mutex..."
       exitMutex.acquire ()
 
    #---------------------------------------------------------------------------  
@@ -177,11 +173,11 @@ class GmiNetCdfFileTools:
    def renameDimensions (self, fileName, field, inDims, outDims):
 
       if not os.path.exists(fileName):
-         raise fileName, " does not exit!"
+         raise (fileName, " does not exit!")
 
       # extract field
       newFileName = fileName + "." + field + ".nc"
-      print newFileName
+#      print newFileName
 
       self.extractSubsetOfVariables ([field], fileName, newFileName)
 
@@ -199,41 +195,36 @@ class GmiNetCdfFileTools:
 
    def createNewVarWithNcap(self, fileName, expression, variableName):
       if not os.path.exists(fileName):
-         raise fileName, " does not exist!"
+         raise (fileName, " does not exist!")
         
       sysCommand = self.constants.NCAPPATH + \
                    "ncap -s \"" + expression + \
                    "\" " + fileName + " " + fileName + "." + \
                    variableName + ".nc"        
-      print sysCommand
+
       returnCode = os.system(sysCommand)
       if returnCode != self.constants.SYS_SUCCESS:
-         raise "Problem creating " + variableName + \
-               " with ncap"
+         raise ("Problem creating " + variableName + \
+               " with ncap")
         
       returnCode = self.mergeFilesIntoNewFile([fileName + "." + \
                                                        variableName + ".nc", \
                                                        fileName], fileName)
       if returnCode != "NOERROR":
-         raise "Problem merging files into: ", fileName
+         raise ("Problem merging files into: ", fileName)
 
       os.remove(fileName + "." + variableName + ".nc")
 
    def dumpHdfEosToNetcdf (self, fileName, destinationPath):
-      print "in dumpHdfEosToNetcdf..."
-      print "NCLPATH: ", self.constants.NCLPATH
-      print "NCLLDPATH: ", self.constants.NCLPATH
-      print "NCLCONVERTPATH: ",  self.constants.NCLCONVERTPATH 
-      print "fileName: ", fileName
-      print "destinationPath: ", destinationPath
+
       systemCommand = "export PATH=$PATH:" + self.constants.NCLPATH + ";" + \
                       " export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:" + \
                       self.constants.NCLPATH + ";" + self.constants.NCLCONVERTPATH + \
                       "ncl_convert2nc " + fileName + " -o " + \
                       destinationPath
-      print systemCommand
+#      print systemCommand
       returnCode = os.system(systemCommand)
-      print "returncode: ", returnCode
+#      print "returncode: ", returnCode
       
       return returnCode
       
@@ -265,7 +256,7 @@ class GmiNetCdfFileTools:
                              sourceFile)
 
       for systemCommand in systemCommands:
-         print systemCommand
+ #        print systemCommand
          os.system (systemCommand)
 
 
@@ -276,11 +267,11 @@ class GmiNetCdfFileTools:
 
 
    def returnNetCDFVarFromFile (self, fileName, varName):
-      print "Getting variable from netcdf file: ", fileName
-      print fileName
+  #    print "Getting variable from netcdf file: ", fileName
+  #    print fileName
       ncFile = NetCDFFile (fileName, 'r')
       ncValues = None
-      print "Getting : ", varName
+  #    print "Getting : ", varName
       ncValues = ncFile.variables[varName]
       dimensions = ncValues.shape
       returnValues = zeros(dimensions)
@@ -289,7 +280,7 @@ class GmiNetCdfFileTools:
       return returnValues
 
    def returnNetCdfFieldsAndDims (self, fileName):
-      print "Getting fields and dimensions from: ", fileName
+      #print "Getting fields and dimensions from: ", fileName
       ncFile = NetCDFFile (fileName, 'r')
       varsFromFile = {}
       for var in ncFile.variables:
@@ -328,7 +319,7 @@ class GmiNetCdfFileTools:
       systemCommand = systemCommand + " " + netCdfFileName + " | " \
                       + self.constants.HDFGENPATH + "/" + "hdfgen -o " \
                       + hdfFileName
-      print systemCommand
+      #print systemCommand
       returnCode = os.system (systemCommand)
 
       if returnCode != self.constants.SYS_SUCCESS:
@@ -341,54 +332,54 @@ class GmiNetCdfFileTools:
    def makeDimensionRecordDimension (self, fileName, dimName):
 
       if not os.path.exists (fileName):
-         raise self.constants.NOSUCHFILE 
+         raise (self.constants.NOSUCHFILE )
 
       systemCommand = self.constants.NCECATPATH + "ncecat -O " + fileName + " " + \
           fileName + ".ncecat.nc"
-      print systemCommand
+#      print systemCommand
       if os.system (systemCommand) != self.constants.SYS_SUCCESS:
-         print "Something went wrong with ncecat command!"
-         raise self.constants.BADSYSTEMRETURNCODE
+         print ("Something went wrong with ncecat command!")
+         raise (self.constants.BADSYSTEMRETURNCODE)
 
-      print "Successfully completed ncecat command"
+#      print "Successfully completed ncecat command"
 
       systemCommand = "mv " + fileName + ".ncecat.nc " + fileName
-      print systemCommand
+#      print systemCommand
       if os.system (systemCommand) != self.constants.SYS_SUCCESS:
-         print "Something went wrong with file mv"
-         raise self.constants.BADSYSTEMRETURNCODE
+         print ("Something went wrong with file mv")
+         raise (self.constants.BADSYSTEMRETURNCODE)
 
 
       systemCommand = self.constants.NCPDQPATH + "ncpdq -U -O -a " + dimName + ",record " \
           + fileName + " " + fileName + ".ncpdq.nc"
-      print systemCommand
+#      print systemCommand
       if os.system (systemCommand) != self.constants.SYS_SUCCESS:
-         print "Something went wrong with ncpdq command"
-         raise self.constants.BADSYSTEMRETURNCODE
+         print ("Something went wrong with ncpdq command")
+         raise (self.constants.BADSYSTEMRETURNCODE)
 
-      print "Successfully completed ncpdq command"
+#      print "Successfully completed ncpdq command"
 
       systemCommand = "mv " + fileName + ".ncpdq.nc " + fileName
-      print systemCommand
+#      print systemCommand
       if os.system (systemCommand) != self.constants.SYS_SUCCESS:
-         print "Something went wrong with mv command 2"
-         raise self.constants.BADSYSTEMRETURNCODE
+         print ("Something went wrong with mv command 2")
+         raise (self.constants.BADSYSTEMRETURNCODE)
 
 
       systemCommand = self.constants.NCWAPATH + "ncwa -O -a record " \
           + fileName + " " + fileName + ".ncwa.nc"
-      print systemCommand
+#      print systemCommand
       if os.system (systemCommand) != self.constants.SYS_SUCCESS:
-         print "Something went wrong with ncwa command"
-         raise self.constants.BADSYSTEMRETURNCODE
+         print ("Something went wrong with ncwa command")
+         raise (self.constants.BADSYSTEMRETURNCODE)
 
-      print "Successfully completed ncwa commmand"
+#      print "Successfully completed ncwa commmand"
 
       systemCommand = "mv " + fileName + ".ncwa.nc " + fileName
-      print systemCommand
+#      print systemCommand
       if os.system (systemCommand) != self.constants.SYS_SUCCESS:
-         print "Something went wrong with file mv 3"
-         raise self.constants.BADSYSTEMRETURNCODE
+         print ("Something went wrong with file mv 3")
+         raise (self.constants.BADSYSTEMRETURNCODE)
 
 
 
@@ -397,7 +388,7 @@ class GmiNetCdfFileTools:
 
    def changeTimeDimToUnlim (self, numTimes, netCdfFile, exitMutex, toExecute):
 
-      print "in changeTimeDimToUnlim: ", netCdfFile
+#      print "in changeTimeDimToUnlim: ", netCdfFile
       if numTimes <= 0:
          raise self.constants.INVALIDINPUT
       
@@ -409,10 +400,10 @@ class GmiNetCdfFileTools:
 
       temporaryFileName = netCdfFile + '.tmp'
 
-      print temporaryFileName
-      print numTimes
-      print str(numTimes)
-      print netCdfFile
+ #     print temporaryFileName
+ #     print numTimes
+ #     print str(numTimes)
+ #     print netCdfFile
       
       systemCommand = self.constants.NCDUMPPATHSAFE + 'ncdump ' + \
                       netCdfFile + " | " + self.constants.SED_PATH + \
@@ -420,14 +411,14 @@ class GmiNetCdfFileTools:
                       '/time = UNLIMITED ;\/\/ (' + str(numTimes) + \
                       ' currently)/g" | ' + self.constants.NCGENPATH + \
                       'ncgen -o ' + temporaryFileName
-      print systemCommand
+#      print systemCommand
 
       if toExecute == 'yes':
          if os.system (systemCommand) != self.constants.SYS_SUCCESS:
-            raise self.constants.BADSYSTEMRETURNCODE
+            raise (self.constants.BADSYSTEMRETURNCODE)
 
       os.rename (temporaryFileName, netCdfFile)
-      print "changeTimeDimToUnlim ACQURING MUTEX"
+#      print "changeTimeDimToUnlim ACQURING MUTEX"
       exitMutex.acquire ()
 
 
@@ -508,7 +499,7 @@ class GmiNetCdfFileTools:
          returnCode = self.doVariableExtractionWithHyperSlabs ("-v", listOfFields, 'time', #
                                            recordCounter, recordCounter, 1, fileName, newFileName)
          if returnCode != self.constants.NOERROR:
-            print "Problem extracting hyper slabs"
+            print ("Problem extracting hyper slabs")
             return returnCode
          
          recordCounter = recordCounter + 1
@@ -517,7 +508,7 @@ class GmiNetCdfFileTools:
          returnCode = self.doUnitConversion (listOfFieldsForUnitConversion [0], \
                                              listOfUnitConversions[0], newFileName, -1)
          if returnCode != self.constants.NOERROR:
-            print "Problem doing unit conversion"
+            print ("Problem doing unit conversion")
             return returnCode                 
       
       return self.constants.NOERROR
@@ -557,17 +548,17 @@ class GmiNetCdfFileTools:
    def doUnitConversion (self, field, unitConversion, fileName, exitMutex):
       
       if len (field) <= 0:
-         print "doUnitConversion ACQUIRING MUTEX"
+#         print "doUnitConversion ACQUIRING MUTEX"
          exitMutex.acquire () 
          return self.constants.INVALIDINPUT
       
       if len (fileName) <= 0:
-         print "doUnitConversion ACQUIRING MUTEX"
+#         print "doUnitConversion ACQUIRING MUTEX"
          exitMutex.acquire () 
          return self.constants.INVALIDINPUT
       
       if not os.path.exists (fileName):
-         print "doUnitConversion ACQUIRING MUTEX"
+ #        print "doUnitConversion ACQUIRING MUTEX"
          exitMutex.acquire () 
          return self.constants.NOSUCHFILE 
       
@@ -579,18 +570,18 @@ class GmiNetCdfFileTools:
 
       systemReturnCode = os.system (systemCommand)
       if systemReturnCode != 0:
-         print "doUnitConversion ACQUIRING MUTEX"
+  #       print "doUnitConversion ACQUIRING MUTEX"
          exitMutex.acquire () 
          return self.constants.BADSYSTEMRETURNCODE
          
       systemCommand = self.constants.MVPATH + 'mv ' + temporaryFileName + ' ' + fileName
       systemReturnCode = os.system (systemCommand)
       if systemReturnCode != 0:
-         print "doUnitConversion ACQUIRING MUTEX"
+   #      print "doUnitConversion ACQUIRING MUTEX"
          exitMutex.acquire () 
          return self.constants.BADSYSTEMRETURNCODE
   
-      print "doUnitConversion ACQUIRING MUTEX"
+    #  print "doUnitConversion ACQUIRING MUTEX"
       exitMutex.acquire () 
 
       return self.constants.NOERROR
@@ -606,22 +597,22 @@ class GmiNetCdfFileTools:
    def doVariableExtractionWithHyperSlabs (self, args, fieldNames, hyperSlabSpecification, #
                                            minSpec, maxSpec, stride, fileName, newFileName):
 
-      print "in doVariableExtraction"
+     # print "in doVariableExtraction"
       
       if len (hyperSlabSpecification) <= 0:
-         print "hyper slab spec invalid"
+         print ("hyper slab spec invalid")
          return self.constants.INVALIDINPUT
       
       if len (fileName) <= 0:
-         print "fileName invalid"
+         print ("fileName invalid")
          return self.constants.INVALIDINPUT
       
       if len (newFileName) <= 0:
-         print "newFileName invalid"
+         print ("newFileName invalid")
          return self.constants.INVALIDINPUT
       
       if not os.path.exists (fileName):
-         print "File does not exist; ", fileName
+         print ("File does not exist; ", fileName)
          return self.constants.NOSUCHFILE
       
       systemCommand = self.constants.NCKSPATH + 'ncks '
@@ -636,7 +627,7 @@ class GmiNetCdfFileTools:
          
             loopCounter = loopCounter + 1
 
-      else: print "No field names specified - will ncks all fields"
+      else: print ("No field names specified - will ncks all fields")
 
       systemCommand = systemCommand + ' -d ' + hyperSlabSpecification + ',' 
       
@@ -650,9 +641,9 @@ class GmiNetCdfFileTools:
       systemCommand = systemCommand + minSpec + ',' + maxSpec + ',' \
                       + stride + ' ' + fileName + " " + newFileName
 
-      print systemCommand
+#      print systemCommand
       systemReturnCode = os.system (systemCommand)
-      print "Sys return code: ", systemReturnCode
+ #     print "Sys return code: ", systemReturnCode
       
       if systemReturnCode != 0:
          return self.constants.BADSYSTEMRETURNCODE
@@ -669,30 +660,31 @@ class GmiNetCdfFileTools:
                              doSed, \
                              exitMutex):  
 
-      print "doHdfDumpToNetCdf!!!"
+
+      #print "doHdfDumpToNetCdf!!!"
       
       if len (fieldNames) <= 0:
-         print "doHdfDumpToNetCdf ACQUIRING MUTEX"
+        # print "doHdfDumpToNetCdf ACQUIRING MUTEX"
          exitMutex.acquire ()
          return self.constants.INVALIDINPUT
 
       if len (hdfFileName) <= 0:
-         print "doHdfDumpToNetCdf ACQUIRING MUTEX"
+         #print "doHdfDumpToNetCdf ACQUIRING MUTEX"
          exitMutex.acquire ()
          return self.constants.INVALIDINPUT
 
-      print "here333"
+
 
       if len (newNcdfFileName) <= 0:
-         print "doHdfDumpToNetCdf ACQUIRING MUTEX"
+         #print "doHdfDumpToNetCdf ACQUIRING MUTEX"
          exitMutex.acquire ()
          return self.constants.INVALIDINPUT
 
-      print "here5555"
-      print hdfFileName
+
+#      print hdfFileName
       if not os.path.exists (hdfFileName):
-         print hdfFileName, " does not exist!"
-         print "doHdfDumpToNetCdf ACQUIRING MUTEX"
+         print (hdfFileName, " does not exist!")
+         #print "doHdfDumpToNetCdf ACQUIRING MUTEX"
          exitMutex.acquire ()
          return self.constants.NOSUCHFILE
          
@@ -728,15 +720,15 @@ class GmiNetCdfFileTools:
           'ncgen -v2 -o ' + newNcdfFileName
 
 
-      print systemCommand
+#      print systemCommand
       systemReturnCode = os.system (systemCommand)
       
       if systemReturnCode != 0:
-         print "doHdfDumpToNetCdf ACQUIRING MUTEX"
+ #        print "doHdfDumpToNetCdf ACQUIRING MUTEX"
          exitMutex.acquire ()
          return self.constants.BADSYSTEMRETURNCODE
 
-      print "doHdfDumpToNetCdf ACQUIRING MUTEX"
+  #    print "doHdfDumpToNetCdf ACQUIRING MUTEX"
       exitMutex.acquire ()
       return self.constants.NOERROR
 
@@ -750,30 +742,30 @@ class GmiNetCdfFileTools:
                              doSed, \
                              exitMutex):  
 
-      print "doHdfDumpToNetCdf!!!"
+   #   print "doHdfDumpToNetCdf!!!"
       
       if len (fieldNames) <= 0:
-         print "doHdfDumpToNetCdf ACQUIRING MUTEX"
+    #     print "doHdfDumpToNetCdf ACQUIRING MUTEX"
          exitMutex.acquire ()
          return self.constants.INVALIDINPUT
 
       if len (hdfFileName) <= 0:
-         print "doHdfDumpToNetCdf ACQUIRING MUTEX"
+     #    print "doHdfDumpToNetCdf ACQUIRING MUTEX"
          exitMutex.acquire ()
          return self.constants.INVALIDINPUT
 
-      print "here333"
+
 
       if len (newNcdfFileName) <= 0:
-         print "doHdfDumpToNetCdf ACQUIRING MUTEX"
+#         print "doHdfDumpToNetCdf ACQUIRING MUTEX"
          exitMutex.acquire ()
          return self.constants.INVALIDINPUT
 
-      print "here5555"
-      print hdfFileName
+ #     print "here5555"
+ #     print hdfFileName
       if not os.path.exists (hdfFileName):
-         print hdfFileName, " does not exist!"
-         print "doHdfDumpToNetCdf ACQUIRING MUTEX"
+         print (hdfFileName, " does not exist!")
+  #       print "doHdfDumpToNetCdf ACQUIRING MUTEX"
          exitMutex.acquire ()
          return self.constants.NOSUCHFILE
          
@@ -809,15 +801,15 @@ class GmiNetCdfFileTools:
           'ncgen -o ' + newNcdfFileName
 
 
-      print systemCommand
+#      print systemCommand
       systemReturnCode = os.system (systemCommand)
       
       if systemReturnCode != 0:
-         print "doHdfDumpToNetCdf ACQUIRING MUTEX"
+ #        print "doHdfDumpToNetCdf ACQUIRING MUTEX"
          exitMutex.acquire ()
          return self.constants.BADSYSTEMRETURNCODE
 
-      print "doHdfDumpToNetCdf ACQUIRING MUTEX"
+  #    print "doHdfDumpToNetCdf ACQUIRING MUTEX"
       exitMutex.acquire ()
       return self.constants.NOERROR
 
@@ -829,31 +821,31 @@ class GmiNetCdfFileTools:
    #---------------------------------------------------------------------------
    def doHdf5ToHdf4 (self, hdf5FileName, exitMutex):
       
-      print "doHdf5toHdf4 "
+   #   print "doHdf5toHdf4 "
       if len (hdf5FileName) <= 0 or not os.path.exists (hdf5FileName):
-         print "doHdf5ToHdf4 INPUT ERROR!!!! Now acquiring mutex and exiting"
+         print ("doHdf5ToHdf4 INPUT ERROR!!!! Now acquiring mutex and exiting")
          exitMutex.acquire ()
          return self.constants.INVALIDINPUT
 
       systemCommand = self.constants.H5TOH4 + " " + hdf5FileName + " " + \
           hdf5FileName + "4"
 
-      print systemCommand
+#      print systemCommand
       systemReturnCode = os.system (systemCommand)
 
       if systemReturnCode != 0:
-         print "doHdf5ToHdf4 CONVERT ERROR!!!! Now acquiring mutex and exiting"
+ #        print "doHdf5ToHdf4 CONVERT ERROR!!!! Now acquiring mutex and exiting"
          exitMutex.acquire ()
          return self.constants.ERROR
 
       systemCommand = self.constants.MVPATH + 'mv ' + hdf5FileName + "4 " + \
           hdf5FileName
-      print systemCommand
+  #    print systemCommand
 
       systemReturnCode = os.system (systemCommand)
 
       if systemReturnCode != 0:
-         print "doHdf5ToHdf4 MOVE ERROR!!!! Now acquiring mutex and exiting"
+         print ("doHdf5ToHdf4 MOVE ERROR!!!! Now acquiring mutex and exiting")
          exitMutex.acquire ()
          return self.constants.ERROR
 
@@ -872,25 +864,25 @@ class GmiNetCdfFileTools:
    def doHdfDumpToNetCdfWithFillValue (self, fieldNames, hdfFileName, newNcdfFileName, \
                           exitMutex):  
 
-      print "doHdfDumpToNetCdf (with fill value)"
+#      print "doHdfDumpToNetCdf (with fill value)"
       
       if len (fieldNames) <= 0:
-         print "doHdfDumpToNetCdf ACQUIRING MUTEX"
+ #        print "doHdfDumpToNetCdf ACQUIRING MUTEX"
          exitMutex.acquire ()
          return self.constants.INVALIDINPUT
 
       if len (hdfFileName) <= 0:
-         print "doHdfDumpToNetCdf ACQUIRING MUTEX"
+  #       print "doHdfDumpToNetCdf ACQUIRING MUTEX"
          exitMutex.acquire ()
          return self.constants.INVALIDINPUT
 
       if len (newNcdfFileName) <= 0:
-         print "doHdfDumpToNetCdf ACQUIRING MUTEX"
+   #      print "doHdfDumpToNetCdf ACQUIRING MUTEX"
          exitMutex.acquire ()
          return self.constants.INVALIDINPUT
 
       if not os.path.exists (hdfFileName):
-         print "doHdfDumpToNetCdf ACQUIRING MUTEX"
+    #     print "doHdfDumpToNetCdf ACQUIRING MUTEX"
          exitMutex.acquire ()
          return self.constants.NOSUCHFILE
 
@@ -924,15 +916,15 @@ class GmiNetCdfFileTools:
       systemCommand = systemCommand + self.constants.NCGENPATH  + \
                       'ncgen -o ' + newNcdfFileName
 
-      print systemCommand
+     # print systemCommand
       systemReturnCode = os.system (systemCommand)
       
       if systemReturnCode != 0:
-         print "doHdfDumpToNetCdf ACQUIRING MUTEX"
+      #   print "doHdfDumpToNetCdf ACQUIRING MUTEX"
          exitMutex.acquire ()
          return self.constants.BADSYSTEMRETURNCODE
 
-      print "doHdfDumpToNetCdf ACQUIRING MUTEX"
+      #print "doHdfDumpToNetCdf ACQUIRING MUTEX"
       exitMutex.acquire ()
       return self.constants.NOERROR
 
@@ -951,22 +943,22 @@ class GmiNetCdfFileTools:
       toExecute = args[4]
       
       if len (fieldNames) <= 0:
-         print "doHdfDumpToNetCdf2 ACQUIRING MUTEX"
+       #  print "doHdfDumpToNetCdf2 ACQUIRING MUTEX"
          exitMutex.acquire ()
          return self.constants.INVALIDINPUT
       
       if len (hdfFileName) <= 0:
-         print "doHdfDumpToNetCdf2 ACQUIRING MUTEX"
+        # print "doHdfDumpToNetCdf2 ACQUIRING MUTEX"
          exitMutex.acquire ()
          return self.constants.INVALIDINPUT
       
       if len (newNcdfFileName) <= 0:
-         print "doHdfDumpToNetCdf2 ACQUIRING MUTEX"
+         #print "doHdfDumpToNetCdf2 ACQUIRING MUTEX"
          exitMutex.acquire ()
          return self.constants.INVALIDINPUT
 
       if not os.path.exists (hdfFileName):
-         print "doHdfDumpToNetCdf2 ACQUIRING MUTEX"
+         #print "doHdfDumpToNetCdf2 ACQUIRING MUTEX"
          exitMutex.acquire ()
          return self.constants.NOSUCHFILE    
       
@@ -1003,11 +995,11 @@ class GmiNetCdfFileTools:
          systemReturnCode = os.system (systemCommand)
       
          if systemReturnCode != 0:
-            print "doHdfDumpToNetCdf2 ACQUIRING MUTEX"
+          #  print "doHdfDumpToNetCdf2 ACQUIRING MUTEX"
             exitMutex.acquire ()
             return self.constants.BADSYSTEMRETURNCODE
 
-      print "doHdfDumpToNetCdf2 ACQUIRING MUTEX"
+#      print "doHdfDumpToNetCdf2 ACQUIRING MUTEX"
       exitMutex.acquire ()
 
       return systemCommand
@@ -1044,7 +1036,7 @@ class GmiNetCdfFileTools:
          loopCounter = loopCounter + 1
       
       systemCommand = systemCommand + ' ' + fileName
-      print systemCommand
+#      print systemCommand
       systemReturnCode = os.system (systemCommand)
       
       if systemReturnCode != 0:
@@ -1068,12 +1060,14 @@ class GmiNetCdfFileTools:
       if len (newFileName) <= 0:
          return self.constants.INVALIDINPUT
       
-      systemCommand = self.constants.NCEAPATH + 'ncea -O'
+#      systemCommand = self.constants.NCEAPATH + 'ncea -O'
+
+      systemCommand = 'ncea -O'
       
       for fileName in listOfInputFileNames:
          
          if not os.path.exists (fileName):
-            print fileName, " does not exist!"
+            print (fileName, " does not exist!")
             return self.constants.NOSUCHFILE
          
          systemCommand = systemCommand + ' ' + fileName
@@ -1083,7 +1077,7 @@ class GmiNetCdfFileTools:
       systemReturnCode = os.system (systemCommand)
       
       if systemReturnCode != 0:
-         print "Bad sys return code: ", systemReturnCode
+         print ("Bad sys return code: ", systemReturnCode)
          return self.constants.BADSYSTEMRETURNCODE
       
       return self.constants.NOERROR
@@ -1114,7 +1108,7 @@ class GmiNetCdfFileTools:
       for fileName in listOfInputFileNames:
          
          if not os.path.exists (fileName):
-            print fileName, " does not exist!"
+            print (fileName, " does not exist!")
             return self.constants.NOSUCHFILE
          
          systemCommand = systemCommand + ' ' + fileName
@@ -1124,12 +1118,12 @@ class GmiNetCdfFileTools:
       if toExecute == 'yes':
          systemReturnCode = os.system (systemCommand)
          if systemReturnCode != 0:
-            print "Bad sys return code: ", systemReturnCode
-            print "doGridPointAverages2 ACQURING MUTEX"
+            print ("Bad sys return code: ", systemReturnCode)
+#            print "doGridPointAverages2 ACQURING MUTEX"
             exitMutex.acquire()
             return self.constants.BADSYSTEMRETURNCODE
 
-      print "doGridPointAverages2 ACQURING MUTEX"
+ #     print "doGridPointAverages2 ACQURING MUTEX"
       exitMutex.acquire()
       return systemCommand
 
@@ -1145,17 +1139,17 @@ class GmiNetCdfFileTools:
    def concatenateRecordVariables (self, fieldNames, fileNames, newFileName):
       
       if len (fileNames) <= 0:
-         print "in valid file names: ", fileNames
+         print ("in valid file names: ", fileNames)
          return self.constants.INVALIDINPUT
       
       if len (newFileName) <= 0:
-         print "invalid new file name: ", newFileName
+         print ("invalid new file name: ", newFileName)
          return self.constants.INVALIDINPUT
 
       
       for fileName in fileNames:
          if not os.path.exists (fileName):
-            print "The file ", fileName, " does not exist!!"
+            print ("The file ", fileName, " does not exist!!")
             return self.constants.NOSUCHFILE
         
       systemCommand = self.constants.NCRCATPATH + 'ncrcat '
@@ -1220,7 +1214,7 @@ class GmiNetCdfFileTools:
          fileNameNoExtension = fileName [0: len (fileName) - len ('.regrid-2x2.5.v-42.nc')]
       
       else:
-         print "Error! The resolution is : ", resolution, "! \n"
+         print ("Error! The resolution is : ", resolution, "! \n")
       
       loopCounter = 0
       while loopCounter < len (fileLines):
@@ -1312,17 +1306,17 @@ class GmiNetCdfFileTools:
    # This routine extracts subsets of variables from the file 
    #---------------------------------------------------------------------------     
    def extractSubsetOfVariables (self, variablesToExtract, fileName, newFileName):
-      print "In extractSubsetOfVariables"
+#      print "In extractSubsetOfVariables"
  
       if len (variablesToExtract) <= 0 or len (fileName) <= 0:
          return self.constants.INVALIDINPUT
 
-      print "file name exists?"
-      print fileName
+ #     print "file name exists?"
+ #     print fileName
       if not os.path.exists (fileName):
          return self.constants.NOSUCHFILE
 
-      print "after file name exists"
+  #    print "after file name exists"
 
       # command to extract from netcdf file
       systemCommand = self.constants.NCKSPATH + 'ncks -v ' 
@@ -1343,12 +1337,12 @@ class GmiNetCdfFileTools:
       systemCommand = systemCommand +" " + fileName + " " + temporaryFileName
 
  
-      print systemCommand
+   #   print systemCommand
       systemReturnCode = os.system (systemCommand)
-      print "system rtn code: ", systemReturnCode
-
-      print "checking systemREturnCode"
-
+#      print "system rtn code: ", systemReturnCode
+#
+#      print "checking systemREturnCode"
+#
       if systemReturnCode != 0:
          return self.constants.BADSYSTEMRETURNCODE
 
@@ -1357,13 +1351,13 @@ class GmiNetCdfFileTools:
       if fileName == newFileName:
          returnCode = os.rename (temporaryFileName, fileName)
       else:
-         print "Creating new file for: ", variablesToExtract
+ #        print "Creating new file for: ", variablesToExtract
          returnCode = os.rename (temporaryFileName, newFileName)
       if systemReturnCode != 0:
-         print "There was a problem renaming ", temporaryFileName
+         print ("There was a problem renaming ", temporaryFileName)
          return self.constants.BADSYSTEMRETURNCODE
 
-      print "returning from extractSubsetOfVariables"
+#      print "returning from extractSubsetOfVariables"
       return self.constants.NOERROR
     
    #---------------------------------------------------------------------------  
@@ -1382,41 +1376,38 @@ class GmiNetCdfFileTools:
          
          if not os.path.exists (fileList [loopCounter]) \
             or not os.path.exists (fileList [loopCounter+1]):
-            print "one of these files does not exist!: "
-            print fileList[loopCounter]
-            print fileList[loopCounter+1]
+            print ("one of these files does not exist!: ")
+            print (fileList[loopCounter])
+            print (fileList[loopCounter+1])
             return self.constants.NOSUCHFILE
 
          # command to merge netcdf files
          systemCommand = self.constants.NCKSPATH + "ncks --append " + \
                          fileList [loopCounter] \
                          + " " + fileList [loopCounter + 1]
-         print ""
-         print ""
-         print systemCommand
          
          systemReturnCode = os.system (systemCommand)
          if systemReturnCode != 0:
-            print "BAD return code in mergeFilesIntoNewFile"
+            print ("BAD return code in mergeFilesIntoNewFile")
             return self.constants.BADSYSTEMRETURNCODE  
 
 
          loopCounter = loopCounter + 1
 
-      print "Last file: ", fileList[loopCounter]
-      print "newFileName: ", newFileName
+#      print "Last file: ", fileList[loopCounter]
+#      print "newFileName: ", newFileName
  
       # rename the last file into the newFileName if they are not the same file
       if fileList [loopCounter] != newFileName:
-         print "Renaming ", fileList [loopCounter], " to " , newFileName
+ #        print "Renaming ", fileList [loopCounter], " to " , newFileName
          systemCommand = self.constants.MVPATH + 'mv ' + fileList [loopCounter] \
                          + ' ' + newFileName
-         print "before os.system"
+  #       print "before os.system"
          systemReturnCode = os.system (systemCommand)
-         print "after os.system"
+   #      print "after os.system"
          if systemReturnCode != 0:
             return self.constants.BADSYSTEMRETURNCODE  
-      print "before return"
+    #  print "before return"
       return self.constants.NOERROR 
 
 
@@ -1429,7 +1420,7 @@ class GmiNetCdfFileTools:
    def openNetCdfFileAndReturnVariables (self, fileName):
 
       if not os.path.exists (fileName):
-         raise self.constants.NOSUCHFILE
+         raise (self.constants.NOSUCHFILE)
          return
 
       variables = []
@@ -1484,8 +1475,8 @@ class GmiNetCdfFileTools:
       ncObject = NetCDFFile (fileName, 'as')
       lonValues = ncObject.variables["lon"]
 
-      print lonValues.shape
-      print lonValues.getValue()
+#      print lonValues.shape
+#      print lonValues.getValue()
 
       # reserve the orginal values of the variable
       reserveValues = zeros(lonValues.shape)
@@ -1504,20 +1495,20 @@ class GmiNetCdfFileTools:
    def flipDataOnCoord5D (self, fileName, variableName, exitMutex):
 
       if not os.path.exists (fileName):
-         print "flipDataOnCoord5D... ACQURING MUTEX"
+ #        print "flipDataOnCoord5D... ACQURING MUTEX"
          exitMutex.acquire()
-         raise self.constants.NOSUCHFILE
+         raise (self.constants.NOSUCHFILE)
 
-      print "Found file"
+
       ncObject = NetCDFFile (fileName, 'as')
       fieldValues = ncObject.variables[variableName]
       fieldShape = shape(fieldValues)
-      print type(fieldValues)
+#      print type(fieldValues)
 
-      print fieldShape[2]
+ #     print fieldShape[2]
       levArray = zeros(fieldShape[2], int)
       levArray = arange(0,fieldShape[2])
-      print levArray
+  #    print levArray
 
       midPoint = len(levArray)/2
       lastIndex = len(levArray)
@@ -1526,12 +1517,12 @@ class GmiNetCdfFileTools:
       newShape = (fieldShape[0], 1, 1, fieldShape[3], fieldShape[4])
       saveLast = zeros(newShape, float32)
       theValues = fieldValues.getValue()
-      print shape(saveLast)
-      print shape(theValues)
+   #   print shape(saveLast)
+   #   print shape(theValues)
       
       for lev in levArray[0:midPoint]:
          saveLast [:,0,0,:,:] = theValues[:,0,lastIndex-count,:,:]
-         print "swapping: ", lastIndex-count, " and ", count-1
+    #     print "swapping: ", lastIndex-count, " and ", count-1
          theValues[:,0,lastIndex-count,:,:] = theValues[:,0,count-1,:,:]
          theValues[:,0,count-1,:,:] = saveLast [:,0,0,:,:]
          count = count + 1
@@ -1544,18 +1535,18 @@ class GmiNetCdfFileTools:
    def remapDataOnLonCoordNew (self, fileName, levFileName, filePrefix, \
                                exitMutex):
 
-      print "in remapDataOnLonCoordNew"
+#      print "in remapDataOnLonCoordNew"
 
       shape576 = self.shape576
       shape288 = self.shape288
       shape144 = self.shape144
       
       if not os.path.exists (fileName):
-         print "NO SUCH FILE: ", fileName
-         print "remapDataOnLonCorrd... ACQURING MUTEX"
+         print ("NO SUCH FILE: ", fileName)
+       #  print "remapDataOnLonCorrd... ACQURING MUTEX"
          exitMutex.acquire()
 
-      print "Opening: ", fileName
+      #print "Opening: ", fileName
 
 
         
@@ -1563,7 +1554,7 @@ class GmiNetCdfFileTools:
       lonValues = ncObject.variables["lon"]
       lonSize = len (lonValues)
 
-      print "Done opening"
+      #print "Done opening"
 
       
       # calculate the beg, middle and end of lon coord
@@ -1577,22 +1568,22 @@ class GmiNetCdfFileTools:
       newCoords2 = [mid,end]
 
 
-      print oldCoords1
-      print newCoords1
+      # print oldCoords1
+      # print newCoords1
 
-      print " "
+      # print " "
 
-      print oldCoords2
-      print newCoords2
+      # print oldCoords2
+      # print newCoords2
 
 
 
-      print "before for"
+      # print "before for"
       for variable in ncObject.variables:
-         print "Reading: ", variable
+#         print "Reading: ", variable
          returnValues = ncObject.variables[variable]
          sizeOfVar = len(returnValues.shape)
-         print sizeOfVar
+ #        print sizeOfVar
             
          if sizeOfVar == 3:
             if returnValues.shape[2:3] == shape288.shape or \
@@ -1615,8 +1606,8 @@ class GmiNetCdfFileTools:
       elif re.search ("0.625x0.5", fileName):
          globalAttr = "0%625x0%5x72"
       else:
-         print "global attribute not supported!"
-         print "remapDataOnLonCorrd... ACQURING MUTEX"
+         print ("global attribute not supported!")
+  #       print "remapDataOnLonCorrd... ACQURING MUTEX"
          exitMutex.acquire()
          return self.constants.ERROR
 
@@ -1639,18 +1630,18 @@ class GmiNetCdfFileTools:
       ncObject.sync()
 
 
-      print "remapDataOnLonCorrd... ACQURING MUTEX"
+#      print "remapDataOnLonCorrd... ACQURING MUTEX"
       exitMutex.acquire()
       return self.constants.NOERROR
 
 
    def swapIndex3D (self, returnValues, old1, old2, new1, new2):
       if len(old1) != len (old2):
-         raise constants.ERROR
+         raise (constants.ERROR)
       if len(new1) != len (new2):
-         raise constants.ERROR
+         raise (constants.ERROR)
       if len (old1) != len (new1):
-         raise constants.ERROR
+         raise (constants.ERROR)
       
       count = 0
     
@@ -1659,8 +1650,8 @@ class GmiNetCdfFileTools:
       theShape = shape(returnValues)
       newShape = (theShape[0], theShape[1], old2[count]-old1[count])
       
-      print "Shape of field variable: ", theShape
-      print "Shape of holder variable: ", newShape
+#3      print "Shape of field variable: ", theShape
+ #     print "Shape of holder variable: ", newShape
    
       
       # get all the values from the NC variable and
@@ -1671,7 +1662,7 @@ class GmiNetCdfFileTools:
       saveLocal[:,:,:] = theValues[:,:,old1[count]:old2[count]]
       
       # swap the data
-      print "about to swap: ", old1[count], ":", old2[count], "and ", new1[count], ":", new2[count]
+  #    print "about to swap: ", old1[count], ":", old2[count], "and ", new1[count], ":", new2[count]
       theValues[:,:,old1[count]:old2[count]] = theValues[:,:,new1[count]:new2[count]]
       theValues[:,:,new1[count]:new2[count]] = saveLocal[:,:,:]
 
@@ -1693,8 +1684,8 @@ class GmiNetCdfFileTools:
       theShape = shape(returnValues)
       newShape = (theShape[0], theShape[1], theShape[2], old2[count]-old1[count])
 
-      print "Shape of field variable: ", theShape
-      print "Shape of holder variable: ", newShape
+#      print "Shape of field variable: ", theShape
+#      print "Shape of holder variable: ", newShape
 
     
       # get all the values from the NC variable and
@@ -1705,7 +1696,7 @@ class GmiNetCdfFileTools:
       saveLocal[:,:,:,:] = theValues[:,:,:,old1[count]:old2[count]]
 
       # swap the data
-      print "about to swap: ", old1[count], ":", old2[count], "and ", new1[count], ":", new2[count]
+      #print "about to swap: ", old1[count], ":", old2[count], "and ", new1[count], ":", new2[count]
       theValues[:,:,:,old1[count]:old2[count]] = theValues[:,:,:,new1[count]:new2[count]]
       theValues[:,:,:,new1[count]:new2[count]] = saveLocal[:,:,:,:]
 
@@ -1772,8 +1763,8 @@ class GmiNetCdfFileTools:
       count = 0
       for coordinate in old1:
          # remap the data on the last coordinate
-      	 print "assigning: ", old1[count], " ", old2[count], " and "
-      	 print "assigning: ", new1[count], " ", new2[count], " and "
+#      	 print "assigning: ", old1[count], " ", old2[count], " and "
+#      	 print "assigning: ", new1[count], " ", new2[count], " and "
  
          newValuesLocal[:,:,:,:,old1[count]:old2[count]] = \
                                                        reserveValues[:,:,:,:,new1[count]:new2[count]]
@@ -1810,8 +1801,8 @@ class GmiNetCdfFileTools:
          count = count + 1
          
       # the new variable will have swaped coordinates
-      print type(newValues), newValues.shape
-      print type(newValuesLocal), newValuesLocal.shape
+#      print type(newValues), newValues.shape
+#      print type(newValuesLocal), newValuesLocal.shape
       
       newValues.assignValue (newValuesLocal)
 
