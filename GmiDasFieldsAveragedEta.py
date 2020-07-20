@@ -17,7 +17,7 @@ from GmiNetCdfFileTools import GmiNetCdfFileTools
 
 import os
 import sys
-import thread
+import _thread
 
 class GmiDasFieldsAveragedEta (GmiDasFields):
    
@@ -111,7 +111,7 @@ class GmiDasFieldsAveragedEta (GmiDasFields):
          # and the horizontal the regrid for the 2x2.5 resolution files
          returnCode = GmiDasFields.processDasFields (self, task)
          if returnCode != self.constants.NOERROR:
-            print "\nThere was a problem processing the das fields in the parent routine!\n"
+            print("\nThere was a problem processing the das fields in the parent routine!\n")
             exitMutex.acquire ()
             return self.constants.ERROR  
       
@@ -120,7 +120,7 @@ class GmiDasFieldsAveragedEta (GmiDasFields):
       else:
          returnCode = GmiDasFields.fillInNecessaryInformation (self, task)
          if returnCode != self.constants.NOERROR:
-            print "\nThere was a problem processing the das fields in the parent routine!\n"
+            print("\nThere was a problem processing the das fields in the parent routine!\n")
             exitMutex.acquire ()
             return self.constants.ERROR  
 
@@ -131,7 +131,7 @@ class GmiDasFieldsAveragedEta (GmiDasFields):
       vertRegrid2x2x5FileName = self.regrid2x2x5FileName \
                                  [0:len(self.regrid2x2x5FileName)-3] + "v.nc"
 
-      print "vertRegrid2x2 filename: ", vertRegrid2x2x5FileName
+      print("vertRegrid2x2 filename: ", vertRegrid2x2x5FileName)
 
       returnCode = self.regridEtaFieldsVertically (self.regrid2x2x5FileName, \
                                                    vertRegrid2x2x5FileName, \
@@ -139,12 +139,12 @@ class GmiDasFieldsAveragedEta (GmiDasFields):
                                                    self.VERTICALGRIDFILE[0], \
                                                    self.VERTICALREGRIDNAMELISTFILE[0])
       if returnCode != self.constants.NOERROR:
-         print "\nThere was an error doing the vertical regrid of the 2x2.5 files!\n"
+         print("\nThere was an error doing the vertical regrid of the 2x2.5 files!\n")
          exitMutex.acquire ()
          return returnCode
 
       self.regrid2x2x5FileName = vertRegrid2x2x5FileName
-      print "new 2x2 file name: ", self.regrid2x2x5FileName
+      print("new 2x2 file name: ", self.regrid2x2x5FileName)
       #------------------------------------------------------------------------
       
       
@@ -159,12 +159,12 @@ class GmiDasFieldsAveragedEta (GmiDasFields):
                                                       self.HORIZONTALREGRIDNAMELISTFILE [1], \
                                                       self.HORIZONTALGRIDFILE [1], "4x5.v-42")
       if returnCode != self.constants.NOERROR:
-         print "Problem doing 4x5 horizontal regrid for ", self.FILETYPE
+         print("Problem doing 4x5 horizontal regrid for ", self.FILETYPE)
          exitMutex.acquire ()
          return returnCode
 
       self.regrid4x5FileName = vertRegrid4x5FileName
-      print "new 4x5 file name: ", self.regrid4x5FileName
+      print("new 4x5 file name: ", self.regrid4x5FileName)
       #------------------------------------------------------------------------
 
       
@@ -179,7 +179,7 @@ class GmiDasFieldsAveragedEta (GmiDasFields):
                       self.HORIZONTALGRIDFILE [1] + " " + self.regrid4x5FileName
       systemReturnCode = os.system (systemCommand)
       if systemReturnCode != 0:
-         print "Problem appending ", self.HORIZONTALGRIDFILE [1] + " to " + self.regrid4x5FileName
+         print("Problem appending ", self.HORIZONTALGRIDFILE [1] + " to " + self.regrid4x5FileName)
          exitMutex.acquire ()
          return self.constants.BADSYSTEMRETURNCODE     
       #------------------------------------------------------------------------
@@ -234,7 +234,7 @@ class GmiDasFieldsAveragedEta (GmiDasFields):
       systemCommand = self.constants.NCKSPATH + "ncks --append " + verticalGridFile + " " + averagedEtaFileName
       systemReturnCode = os.system (systemCommand)
       if systemReturnCode != 0:
-         print "Problem appending ", self.verticalGridFile, " to " + averagedEtaFileName
+         print("Problem appending ", self.verticalGridFile, " to " + averagedEtaFileName)
          return self.constants.BADSYSTEMRETURNCODE      
 
    
@@ -242,7 +242,7 @@ class GmiDasFieldsAveragedEta (GmiDasFields):
       returnCode = self.gmiNetCdfFileTool.regridFile (averagedEtaFileName, newFileName, \
                                                       verticalNameListFile, horizontalGridFile, "v-42")
       if returnCode != self.constants.NOERROR:
-         print "Problem doing vertical regrid for ", self.FILETYPE, " return Code is : ", returnCode
+         print("Problem doing vertical regrid for ", self.FILETYPE, " return Code is : ", returnCode)
          return returnCode   
 
          
@@ -257,7 +257,7 @@ class GmiDasFieldsAveragedEta (GmiDasFields):
       returnCode = self.gmiNetCdfFileTool.extractSubsetOfVariables \
                    (self.FIELDSTOEXTRACT, newFileName)
       if returnCode != self.constants.NOERROR:
-         print "Problem doing field extraction for ", self.FILETYPE
+         print("Problem doing field extraction for ", self.FILETYPE)
          return returnCode   
       
       return self.constants.NOERROR

@@ -53,7 +53,7 @@ class GmiLogUtilities:
          return self.constants.INVALIDINPUT
       
       if not os.path.exists (fileName):
-         print "log file: ", fileName, " does not exist - creating...", "\n"
+         print("log file: ", fileName, " does not exist - creating...", "\n")
          fileObject = open (fileName, 'a')
          fileObject.close ()
          

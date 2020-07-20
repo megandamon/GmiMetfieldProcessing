@@ -62,14 +62,15 @@ class CommonUtilities:
             raise self.constants.ERROR
 
         systemCommand = self.constants.QSUBPATH + "qsub " + fileName
-#        print "in qsub : ", systemCommand
 
         try:            
             child = os.popen(systemCommand)
             jobId = child.read()
             jobId = jobId.rstrip ('\n')
             err = child.close()
-            self.watchQueueJob (jobId) 
+
+            self.watchQueueJob (jobId)
+
         except:
             raise
 
@@ -87,22 +88,21 @@ class CommonUtilities:
                        ' ".borg" | ' + self.constants.AWKPATH + \
                        "awk '{print $1}'"
 
-        #print qstatCommand
     
         child = os.popen(qstatCommand)
 
         theOutput = child.read()
         theOutput = theOutput.rstrip ('\n')
+
         err = child.close()
         
         while theOutput == jobId:
-            sleep (30)
-            
+            print ("Waiting for job: ", jobId)
+            sleep (5)            
             child = os.popen(qstatCommand)
             theOutput = child.read()
             theOutput = theOutput.rstrip ('\n')
             err = child.close()
-        
 
 
     def transferFile (self, fileName, remoteSystem, remotePath):
@@ -131,7 +131,7 @@ class CommonUtilities:
     def returnValue (self, list, id):
 
         if len(list) == 0:
-            raise (self.constants.NOSUCHIDENTIFIER)
+            raise self
             return
 
         for item in list:
@@ -139,7 +139,7 @@ class CommonUtilities:
             if splitList[0] == id:
                 return splitList[1]
 
-        raise (self.constants.NOSUCHIDENTIFIER)
+        raise self
             
 
     #---------------------------------------------------------------------------  
@@ -156,7 +156,7 @@ class CommonUtilities:
     def updateValue (self, list, name, value):
 
         if len(list) == 0:
-            raise (self.constants.NOSUCHIDENTIFIER)
+            raise self
             return
 
         newList = []

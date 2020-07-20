@@ -62,7 +62,7 @@ __date__ = '2008/05/15'
 import getopt
 import sys
 import os
-import thread
+import _thread
 import cProfile
 import pstats
 
@@ -83,7 +83,7 @@ from GmiDasTasks import GmiDasTasks
 NUM_ARGS = 1
 
 def usage ():
-    print "usage: GmiProcessGeos5Das.py [-i]"
+    print("usage: GmiProcessGeos5Das.py [-i]")
     sys.exit (0)
 
 
@@ -91,7 +91,7 @@ def usage ():
 # START:: Get options from command line
 #---------------------------------------------------------------
 
-print "Initializing config options from input file..."
+print("Initializing config options from input file...")
 
 optList, argList = getopt.getopt(sys.argv[1:],'i:')
 if len (optList) != NUM_ARGS:
@@ -149,9 +149,9 @@ profileDir = processDirectory + "profiles/"
 dasTasks = GmiDasTasks (realTime)
 
 
-print "done initializing task info"
+print("done initializing task info")
 
-print "Checking for lock file. Will exit quietly not to override existing process..."
+print("Checking for lock file. Will exit quietly not to override existing process...")
 #----------------------------------------------------------------
 # Check for the existence of the processing file in the directory
 # If processing, just quit quietly, otherwise create the file
@@ -166,7 +166,7 @@ if not os.path.exists (logFile):
                              autoConstants.ERROR_SUBJECT, \
                              mailTo, lockFile)
 
-print "Constructing each task in memory and on disk..."
+print("Constructing each task in memory and on disk...")
 
 #----------------------------------------------------------------
 # Construct the tasks in memory and on disk
@@ -180,7 +180,7 @@ except:
                             str (sys.exc_info ()), autoConstants.ERROR_SUBJECT, \
                             mailTo, lockFile)
 
-print "Setting up fetching information..."
+print("Setting up fetching information...")
 
 if sourcePath == 'ftp':
     ftpScript = processDirectory + "scripts/" + gmiAutomationObject.tasks[0].filePrefix + ".bash"
@@ -221,7 +221,7 @@ if len (gmiAutomationObject.tasks) == 0:
 
 
 
-print " About to process tasks..."
+print(" About to process tasks...")
 
 #----------------------------------------------------------------
 # START:: Process each task
@@ -237,14 +237,14 @@ for task in gmiAutomationObject.tasks:
 entry = gmiAutomationObject.tasks[0].filePrefix + gmiAutomationObject.tasks[0].year \
           + gmiAutomationObject.tasks[0].month + gmiAutomationObject.tasks[0].day
 
-print "Prestaging the first task: ", gmiAutomationObject.tasks[0].year, \
-      gmiAutomationObject.tasks[0].month, gmiAutomationObject.tasks[0].day
+print("Prestaging the first task: ", gmiAutomationObject.tasks[0].year, \
+      gmiAutomationObject.tasks[0].month, gmiAutomationObject.tasks[0].day)
 
 
 try:
     dasTasks.preStageAllDas (gmiAutomationObject.tasks[0], \
                                  dasObjects, archiveSystem, transferFile, \
-                                 processDirectory, thread.allocate_lock(), mailTo, \
+                                 processDirectory, _thread.allocate_lock(), mailTo, \
                                  ftpScript)
 except:
     ioRoutines.errorAndQuit ("Aborting MERRA regridding after inital pre staging " \
@@ -252,7 +252,7 @@ except:
                                  + str (sys.exc_info ()), autoConstants.ERROR_SUBJECT, \
                                  mailTo, lockFile)
 
-print "Entering task loop..."
+print("Entering task loop...")
 
 try:
     for task in gmiAutomationObject.tasks:
@@ -260,11 +260,11 @@ try:
         # Prestage the next task in a seperate thread and process the current task
         if taskCount != len(gmiAutomationObject.tasks)-1:
             
-            print "Advance prestaging: ", gmiAutomationObject.tasks[taskCount+1].year, \
+            print("Advance prestaging: ", gmiAutomationObject.tasks[taskCount+1].year, \
                   gmiAutomationObject.tasks[taskCount+1].month, \
-                  gmiAutomationObject.tasks[taskCount+1].day
-            exitMutexes.append (thread.allocate_lock())
-            thread.start_new (dasTasks.preStageAllDas, (gmiAutomationObject.tasks[taskCount+1], \
+                  gmiAutomationObject.tasks[taskCount+1].day)
+            exitMutexes.append (_thread.allocate_lock())
+            _thread.start_new (dasTasks.preStageAllDas, (gmiAutomationObject.tasks[taskCount+1], \
                                                         dasObjects, \
                                                         archiveSystem, transferFile, \
                                                         processDirectory, \
@@ -275,7 +275,7 @@ try:
         profileTaskFile = profileDir + "task." + entry + ".profile"
         if os.path.exists (profileTaskFile): os.remove (profileTaskFile)
         if preStageOnly != "true":        
-            print "Processing: ", entry
+            print("Processing: ", entry)
             #cProfile.run('dasTasks.processTask (task, dasObjects, task.destinationPath, \
             #                      processDirectory, archiveDirectory, archiveSystem, \
             #                      levsFile, constFieldsPath, mailTo, logFile, \
@@ -287,11 +287,11 @@ try:
                                                    configFile, taskFile, \
                                                    transferFile)
         else:
-            print "Running in PRESTAGE_ONLY mode.  Will not do any processing."
+            print("Running in PRESTAGE_ONLY mode.  Will not do any processing.")
             
 
 
-        print "Waiting for pre-staging thread"
+        print("Waiting for pre-staging thread")
         #----------------------------------------------------------------
         #  Wait for the thread that is pre-staging before continuing
         #----------------------------------------------------------------
@@ -304,7 +304,7 @@ try:
         #p.sort_stats('name')
         #p.print_stats()
 
-        print "done with task: ", taskCount
+        print("done with task: ", taskCount)
 
         taskCount = taskCount + 1
         if taskCount <= len(gmiAutomationObject.tasks)-1:

@@ -21,7 +21,7 @@ from IoRoutines import IoRoutines
 import os
 import re
 import sys
-import thread
+import _thread
 from time import time
 
 class GmiDasFields:
@@ -85,7 +85,7 @@ class GmiDasFields:
                       "_" + record + "z.hdf"
          theFile = fullSourcePath + fileString
          if not os.path.exists (theFile):
-            print "File not found: ", theFile
+            print("File not found: ", theFile)
             raise self.constants.NOSUCHFILE
 
    #---------------------------------------------------------------------------  
@@ -105,7 +105,7 @@ class GmiDasFields:
          fullSourcePath  = task.sourcePath + "/" + task.year + \
                            "/" + task.month + "/" 
       else:
-         print "The SOURCESTYLE: ", self.SOURCESTYLE, " is not supported"
+         print("The SOURCESTYLE: ", self.SOURCESTYLE, " is not supported")
          raise 
       
       return fullSourcePath
@@ -126,7 +126,7 @@ class GmiDasFields:
       # verify the completeness of the task object
       returnCode = task.verifyCompleteness ()
       if returnCode != self.constants.NOERROR:
-         print "\nInvalid task for", self.FILETYPE, " returnCode = ", returnCode, "\n"
+         print("\nInvalid task for", self.FILETYPE, " returnCode = ", returnCode, "\n")
          return self.constants.INVALIDINPUT
       
       # create a log entry
@@ -138,11 +138,11 @@ class GmiDasFields:
       logUtility = GmiLogUtilities ()
       if logUtility.checkLogForEntry (entry, self.constants.DEFAULTDASLOGFILENAME) != True:
          
-         print "\nThe entry: ", entry, " was not found and will be processed for", self.FILETYPE, "\n"
+         print("\nThe entry: ", entry, " was not found and will be processed for", self.FILETYPE, "\n")
          
          returnCode = self.processDasFields (task)
          if returnCode != self.constants.NOERROR:
-            print "Could not process the ", self.FILETYPE, "DAS fields \nreturnCode = ", returnCode, "\n"
+            print("Could not process the ", self.FILETYPE, "DAS fields \nreturnCode = ", returnCode, "\n")
             return returnCode
          
          
@@ -150,7 +150,7 @@ class GmiDasFields:
            
            
       else:
-         print "The entry: ", entry, " was found and will not be processed for ", self.FILETYPE, "\n"
+         print("The entry: ", entry, " was found and will not be processed for ", self.FILETYPE, "\n")
          
       return self.constants.NOERROR
 
@@ -208,12 +208,12 @@ class GmiDasFields:
       try:
          files = self.gmiAutomationTool.getMatchingFiles (sourcePath, filePattern)
       except:         
-         print "\nThe ", filePattern, " files in ", sourcePath, " for ", self.FILETYPE, \
-               "are not available.\n"
+         print("\nThe ", filePattern, " files in ", sourcePath, " for ", self.FILETYPE, \
+               "are not available.\n")
          raise self.constants.NOSUCHPATH     
       
       if len (files) < self.EXPECTEDNUMBEROFFILES:
-         print "len of ", self.FILETYPE, "  files: ", len (files), " not as expected!\n"
+         print("len of ", self.FILETYPE, "  files: ", len (files), " not as expected!\n")
          raise self.constants.INCORRECTNUMBEROFFILES
 
       # add the source path to the file list
@@ -238,9 +238,9 @@ class GmiDasFields:
          newNcdfFileName = destinationPath + newNcdfFileName 
          
          # do the dump to netcdf
-         print "Processing: ", newNcdfFileName, "\n"
-         exitMutexes.append (thread.allocate_lock())
-         thread.start_new (self.gmiNetCdfFileTool.doHdfDumpToNetCdf, \
+         print("Processing: ", newNcdfFileName, "\n")
+         exitMutexes.append (_thread.allocate_lock())
+         _thread.start_new (self.gmiNetCdfFileTool.doHdfDumpToNetCdf, \
                            (self.FIELDS, #
                             filesWithPath [mutexCount], #
                             newNcdfFileName,
@@ -257,8 +257,8 @@ class GmiDasFields:
       try:
          allFiles = self.gmiAutomationTool.getMatchingFiles (destinationPath, filePattern)
       except:
-         print "Exception raised when attempting to get matching files in : ", \
-               destinationPath, "for ", self.FILETYPE, " \n"
+         print("Exception raised when attempting to get matching files in : ", \
+               destinationPath, "for ", self.FILETYPE, " \n")
          return self.constants.NOSUCHPATH
 
       # remove any non .nc files
@@ -278,7 +278,7 @@ class GmiDasFields:
       returnCode = self.gmiNetCdfFileTool.concatenateRecordVariables \
                    (self.FIELDS, filesWithPath, concatenatedFileName)
       if returnCode != self.constants.NOERROR:
-         print "Problem concatenating record variables for ", self.FILETYPE, " fields\n"
+         print("Problem concatenating record variables for ", self.FILETYPE, " fields\n")
          raise self.constants.ERROR
 
       # now remove the files
@@ -293,8 +293,8 @@ class GmiDasFields:
       exitMutexes = []
       while fieldCounter < len (self.FIELDSFORUNITCONVERSION):
 
-         exitMutexes.append (thread.allocate_lock())
-         thread.start_new (self.gmiNetCdfFileTool.doUnitConversion, \
+         exitMutexes.append (_thread.allocate_lock())
+         _thread.start_new (self.gmiNetCdfFileTool.doUnitConversion, \
                            (self.FIELDSFORUNITCONVERSION [fieldCounter], \
                             self.UNITCONVERSION[fieldCounter], concatenatedFileName, \
                             exitMutexes[fieldCounter]))
@@ -316,7 +316,7 @@ class GmiDasFields:
                     self.HORIZONTALREGRIDNAMELISTFILE [0], \
                     self.HORIZONTALGRIDFILE [0], "2x2.5")
       if returnCode != self.constants.NOERROR:
-         print "Problem doing 2x2.25 horizontal regrid for ", self.FILETYPE
+         print("Problem doing 2x2.25 horizontal regrid for ", self.FILETYPE)
          return returnCode    
 
       # now that the concatenatedFile is not needed to regrid anymore,
@@ -371,7 +371,7 @@ class GmiDasFields:
          ioRoutines.appendLinesToFileAndRename (transferFile, \
                                                 systemCommands, \
                                                 newTransferFile)
-         print "transfer file: ", newTransferFile
+         print("transfer file: ", newTransferFile)
          jobId = commonUtils.qsubFileAndWait (newTransferFile)
       except: raise
      
@@ -411,7 +411,7 @@ class GmiDasFields:
       # if they are merge them and fix other attributes
       
       filePatternWithDate = task.year + task.month + task.day + "." + filePattern
-      print "\nMerging files with the pattern: ", filePatternWithDate
+      print("\nMerging files with the pattern: ", filePatternWithDate)
 
 
       
@@ -424,7 +424,7 @@ class GmiDasFields:
    
       systemReturnCode = os.system (systemCommand)
       if systemReturnCode != 0:
-         print "Error! returnCode is: ", systemReturnCode, " after attempting to remove the G4 files \n"
+         print("Error! returnCode is: ", systemReturnCode, " after attempting to remove the G4 files \n")
          return self.constants.BADSYSTEMRETURNCODE      
 
 
@@ -466,7 +466,7 @@ class GmiDasFields:
       returnCode = self.gmiNetCdfFileTool.mergeFilesIntoNewFile (filesWithPath, newFileName)
       if returnCode != self.constants.NOERROR:
          
-         print "\nThere was an error in mergeFilesIntoNewFile, return code is ", returnCode, "\n"
+         print("\nThere was an error in mergeFilesIntoNewFile, return code is ", returnCode, "\n")
          return self.constants.ERROR
       
       #------------------------------------------------- 
@@ -480,7 +480,7 @@ class GmiDasFields:
       systemReturnCode = os.system (systemCommand)
       if systemReturnCode != 0:
          
-         print "\nThere was an error removing the files: ", filesWithPath [0], " ", filesWithPath [1], "\n"
+         print("\nThere was an error removing the files: ", filesWithPath [0], " ", filesWithPath [1], "\n")
          return self.constants.ERROR 
    
       #-------------------------------------------------
@@ -495,8 +495,8 @@ class GmiDasFields:
                                                         GmiDasFields.NEWFIELDNAMES, newFileName)
       if returnCode != self.constants.NOERROR:
       
-         print "\nThere was an error renaming fields in the file: ", newFileName, \
-               " return code is : ", returnCode, "\n"
+         print("\nThere was an error renaming fields in the file: ", newFileName, \
+               " return code is : ", returnCode, "\n")
          return self.constants.ERROR
       
       #-------------------------------------------------
@@ -533,8 +533,8 @@ class GmiDasFields:
       systemReturnCode = os.system (systemCommand)
       if systemReturnCode != 0:
          
-         print "\nThere was an error correcting the critical attributes for the file: ", \
-               newFileName, "systemReturnCode = ", systemReturnCode, "\n"
+         print("\nThere was an error correcting the critical attributes for the file: ", \
+               newFileName, "systemReturnCode = ", systemReturnCode, "\n")
          return self.constants.ERROR
       
       #-------------------------------------------------

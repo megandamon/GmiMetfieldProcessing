@@ -47,24 +47,24 @@ class GmiGFIORemapTools:
    #---------------------------------------------------------------------------    
    def uncompressFile (self, inputFile, outputFile, executable, exitMutex):
 
-      print "inputFile: ", inputFile
-      print "executable: ", executable
+      print("inputFile: ", inputFile)
+      print("executable: ", executable)
       
       if not os.path.exists (inputFile):
-         raise self.constants.INVALIDINPUT
+         raise Exception(self.constants.INVALIDINPUT)
       
       if len (outputFile) <= 0:
-         raise self.constants.INVALIDINPUT
+         raise Exception(self.constants.INVALIDINPUT)
       
       if not os.path.exists (executable):
-         raise self.constants.INVALIDINPUT
+         raise Exception(self.constants.INVALIDINPUT)
 
       cmd = executable + " -i " + inputFile + " -o " + \
             outputFile + " -t \*:NONE"
 
       os.system (cmd)
 
-      print "uncompressFile ACQURING MUTEX"
+      print("uncompressFile ACQURING MUTEX")
       exitMutex.acquire ()
       
       
@@ -78,15 +78,15 @@ class GmiGFIORemapTools:
                   bit, exitMutex):
 
       if not os.path.exists (sourceFile):
-         raise self.constants.INVALIDINPUT
+         raise Exception(self.constants.INVALIDINPUT)
       
       if len (destinationFile) <= 0:
-         raise self.constants.INVALIDINPUT
+         raise Exception(self.constants.INVALIDINPUT)
       
       if not os.path.exists (executable):
-        print executable  
-	raise self.constants.INVALIDINPUT
-
+         print(executable)  
+         raise Exception(self.constants.INVALIDINPUT)
+      
       if resolution == "4x5":
          shortRes = "a"
       elif resolution == "2x2.5":
@@ -96,16 +96,16 @@ class GmiGFIORemapTools:
       elif resolution == "0.625x0.5":
          shortRes = "d"
       else:
-         raise self.constants.INVALIDINPUT
+         raise Exception(self.constants.INVALIDINPUT)
       
       cmd = executable + " -res " + shortRes + " -prec " + bit + " -o " + \
             destinationFile + " " + sourceFile
 
-      print "cmd: ", cmd
+      print("cmd: ", cmd)
       returnCode = os.system (cmd)
-      print "returnCode = ", returnCode
+      print("returnCode = ", returnCode)
 
-      print "gfioRemap ACQURING MUTEX"
+      print("gfioRemap ACQURING MUTEX")
       exitMutex.acquire ()
 
    def gfioRemap2 (self, args):
@@ -117,16 +117,16 @@ class GmiGFIORemapTools:
       exitMutex = args[4]
       toExecute = args[5]
 
-      print sourceFile
+      print(sourceFile)
       
       if not os.path.exists (sourceFile):
-         raise self.constants.INVALIDINPUT
+         raise Exception( self.constants.INVALIDINPUT)
       
       if len (destinationFile) <= 0:
-         raise self.constants.INVALIDINPUT
+         raise Exception(self.constants.INVALIDINPUT)
       
       if not os.path.exists (executable):
-         raise self.constants.INVALIDINPUT
+         raise Exception(self.constants.INVALIDINPUT)
 
       if resolution == "4x5":
          shortRes = "a"
@@ -137,7 +137,7 @@ class GmiGFIORemapTools:
       elif resolution == "0.625x0.5":
          shortRes = "d"
       else:
-         raise self.constants.INVALIDINPUT
+         raise Exception(self.constants.INVALIDINPUT)
       
       cmd = executable + " -res " + shortRes + " -prec 64 -o " + \
             destinationFile + " " + sourceFile
@@ -145,7 +145,7 @@ class GmiGFIORemapTools:
       if toExecute == 'yes':
          os.system (cmd)
 
-      print "gfioRemap2 ACQUIRING MUTEX"
+      print("gfioRemap2 ACQUIRING MUTEX")
       exitMutex.acquire ()
       
       return cmd

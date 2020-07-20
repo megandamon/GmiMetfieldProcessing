@@ -1,4 +1,4 @@
-RUN_DIR:/discover/nobackup/mrdamon/MERRA2/
+RUN_DIR:/discover/nobackup/mrdamon/MERRA2/GmiMetfieldProcessing/
 LOCK_FILE:.Iam.$YYYY$MO
 ARCHIVE_PATH:/archive/anon/pub/gmidata2/input/metfields/geos5das-merra2/
 DESTINATION_PATH:/discover/nobackup/projects/gmi/gmidata2/users/mrdamon/metfield-processing/merra2/

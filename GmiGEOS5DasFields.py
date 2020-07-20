@@ -24,7 +24,7 @@ from IoRoutines import IoRoutines
 import os
 import re
 import sys 
-import thread
+import _thread
 from numpy import *
 from time import time
 
@@ -109,7 +109,7 @@ class GmiGEOS5DasFields:
          fullSourcePath  = task.sourcePath + "/" + task.year + \
                            "/" + task.month + "/" 
       else:
-         print "The SOURCESTYLE: ", self.SOURCESTYLE, " is not supported"
+         print("The SOURCESTYLE: ", self.SOURCESTYLE, " is not supported")
          raise self.constants.INVALIDINPUT
       
       return fullSourcePath
@@ -124,20 +124,20 @@ class GmiGEOS5DasFields:
          fileStringPre = task.filePrefix + "." + prefix + \
                          "." + task.year + task.month + task.day
          if len(self.RECORDS) != 0:
-            print "Checking records"
+            print("Checking records")
             for record in self.RECORDS:
                fileString = fileStringPre + "_" + record + ".nc4"
                theFile = fullSourcePath + fileString
                if not os.path.exists (theFile):
-                  print "check file parent: ", theFile
+                  print("check file parent: ", theFile)
                   raise self.constants.NOSUCHFILE
          else:
             fileString = fileStringPre + ".nc4"
             theFile = fullSourcePath + fileString
             if not os.path.exists (theFile):
-               print "check file parent: ", theFile
+               print("check file parent: ", theFile)
                raise self.constants.NOSUCHFILE
-            print "The file: ", fileString, " exists."
+            print("The file: ", fileString, " exists.")
 
             
 
@@ -162,13 +162,13 @@ class GmiGEOS5DasFields:
       
       self.prepareGEOSFields (task)
 
-      print "doGEOS5DASFields parent ACQURING MUTEX"
+      print("doGEOS5DASFields parent ACQURING MUTEX")
       exitMutex.acquire ()
 
    def extractTimeRecords (self, task, spec, min, max, stride):
 
-      print "Extracting records ", min, "-", max, " stride ", stride
-      print "For: ", self.RESOLUTIONS, self.PREFIXES
+      print("\nExtracting records ", min, "-", max, " stride ", stride)
+      print("For: ", self.RESOLUTIONS, self.PREFIXES)
 
       basePath = task.destinationPath + "/" + \
                  task.year + "/" + task.month + \
@@ -189,8 +189,6 @@ class GmiGEOS5DasFields:
                       task.day + "." + \
                       resolution + ".3hr.nc"
 
-            print inputFile
-            print newFile
             netCdfObject.doVariableExtractionWithHyperSlabs ( \
                " ", [], spec, min, max, stride, inputFile, \
                newFile)
@@ -213,13 +211,41 @@ class GmiGEOS5DasFields:
    def regridAndDumpHdfFiles (self, task):
 
       try:
-         print "Regridding the files to required resolutions"
+         print("\nRegridding the files to required resolutions")
          self.regridFilesAllResolutions (task)
-         print "Convert HDF5 to HDF4"
-         self.convertHdf5ToHdf4 (task)
-         print "Dumping hdf fields to netcdf"
+
+         #print("Convert HDF5 to HDF4")
+         #self.convertHdf5ToHdf4 (task)
+         
+         print("\nDumping hdf fields to netcdf")
          self.dumpFieldsToNetcdf (task)
-         print "Done dumping to netcdf"
+         print("\nDone dumping to netcdf")
+
+      except:
+         raise
+   #---------------------------------------------------------------------------  
+   # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC
+   #
+   # DESCRIPTION: 
+   # This routine performs the tasks needed by all the GEOS5DAS fields.
+   # finalize this list: regridding, hdf to netcdf, renaming?
+   # this routine expects an exitMutex object; it is intended to be
+   # reentrant
+   #---------------------------------------------------------------------------
+
+   def regridAndDumpHdfFilesTwoThreads (self, task):
+
+      try:
+         print("\nRegridding the files to required resolutions")
+         self.regridFilesAllResolutions (task)
+
+         #print("Convert HDF5 to HDF4")
+         #self.convertHdf5ToHdf4 (task)
+         
+         print("\nDumping hdf fields to netcdf")
+         self.dumpFieldsToNetcdfTwoThreads (task)
+         print("\nDone dumping to netcdf")
+
       except:
          raise
 
@@ -268,10 +294,10 @@ class GmiGEOS5DasFields:
          ioRoutines.appendLinesToFileAndRename (transferFile, \
                                                 systemCommands, \
                                                 newTransferFile)
-         print "Here is the transfer file: ", newTransferFile
+         print("Here is the transfer file: ", newTransferFile)
 
          jobId = commonUtils.qsubFileAndWait (newTransferFile)
-      except: raise "Problem submitting transfer job"
+      except: raise Exception("Problem submitting transfer job")
      
       # remove the transfer and output file
       os.remove (newTransferFile)
@@ -295,7 +321,7 @@ class GmiGEOS5DasFields:
    def mergeAllFilesIntoOne (self, task):
 
 
-      print "merge all files"
+      print("merge all files")
       basePath = task.destinationPath + "/" + \
                  task.year + "/" + task.month + \
                  "/"
@@ -304,7 +330,7 @@ class GmiGEOS5DasFields:
       # merge time records
       resolution = "2x2.5"
       fileNames = []
-      print self.AVERAGEDRECORDS
+      print(self.AVERAGEDRECORDS)
       for record in self.AVERAGEDRECORDS:
          timeRecordFile = basePath + \
                           task.filePrefix + "." + \
@@ -313,17 +339,17 @@ class GmiGEOS5DasFields:
                           task.day + "_" + \
                           record + "z." + \
                           resolution + ".nc"
-         print timeRecordFile
+         print(timeRecordFile)
          fileNames.append (timeRecordFile)
          
          # add the correct time stamp
 
-         systemCommand = "ncap -O -s time=time+"+record+". "+timeRecordFile+" "+timeRecordFile
+         systemCommand = "ncap2 -O -s time=time+"+record+". "+timeRecordFile+" "+timeRecordFile
          
-         print systemCommand
+         print(systemCommand)
          returnCode = os.system (systemCommand)
          if returnCode != 0:
-            print "ERROR trying to do ncap: ", returnCode
+            print("ERROR trying to do ncap: ", returnCode)
 
       mergedTimeRecordFileName = basePath + task.filePrefix + "." + \
                                  self.GMIPREFIX + "." + task.year + \
@@ -334,7 +360,7 @@ class GmiGEOS5DasFields:
       returnCode = gmiNetCdfObject.concatenateRecordVariables (blankFieldNames, fileNames, \
                                                                mergedTimeRecordFileName)
       if returnCode != self.constants.NOERROR:
-         print "ERROR trying to concatenate record variables: ", returnCode
+         print("ERROR trying to concatenate record variables: ", returnCode)
 
             
    #---------------------------------------------------------------------------  
@@ -363,11 +389,12 @@ class GmiGEOS5DasFields:
       parallelTools = GmiParallelTools (task.archType)
       remapObject = GmiGFIORemapTools ()
 
-      print "About to start dumping threads..."
+      print("\nAbout to start dumping data using threads...")
 
       exitMutexes = []
       systemCommands = []
       count = 0
+      batchCount = 0
       # process each time record
       for resolution in self.RESOLUTIONS:
 
@@ -377,7 +404,7 @@ class GmiGEOS5DasFields:
             fileString = task.filePrefix + "." + prefix + \
                          "." + task.year + task.month + task.day + \
                          "." + resolution + "."
-            print fileString
+
 
             sourceFile = destinationPath + "/" + \
                          fileString + \
@@ -387,13 +414,16 @@ class GmiGEOS5DasFields:
                               "nc"
 
 
-            print "starting new thread"
-            print self.GEOS5FIELDS
-            print sourceFile
-            print destinationFile
-            exitMutexes.append (thread.allocate_lock())
+            print("\nStarting new thread")
+            print(self.GEOS5FIELDS)
+            print(sourceFile)
+            print(destinationFile)
+            
+            exitMutexes.append (_thread.allocate_lock())
 
-            thread.start_new(gmiNetCdfObject.doHdfDumpToNetCdf, \
+
+            
+            _thread.start_new(gmiNetCdfObject.doHdfDumpToNetCdfNoFields, \
                              (self.GEOS5FIELDS, \
                               sourceFile, \
                               destinationFile, \
@@ -401,6 +431,7 @@ class GmiGEOS5DasFields:
                              
             count = count + 1
 
+               
 
       #----------------------------------------------------------------
       #  Wait for all three threads before proceeding 
@@ -409,7 +440,94 @@ class GmiGEOS5DasFields:
          while not mutex.locked (): 
             pass
 
-      print "All threads returned!"
+      print("All threads returned!")
+
+         #---------------------------------------------------------------------------  
+   # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC
+   #
+   # DESCRIPTION: 
+   # This routine will dump all the fields in the task to a netcdf file.
+   #---------------------------------------------------------------------------    
+
+   def dumpFieldsToNetcdfTwoThreads (self, task):
+
+      
+      # construct the destination path
+      gmiAutoObject = GmiAutomationTools ()
+      gmiNetCdfObject = GmiNetCdfFileTools ()
+      
+      
+      destinationPath = task.destinationPath + "/" + \
+                        task.year + "/" + task.month
+
+      # create the path if it does not exist
+      if not os.path.exists (destinationPath):
+         gmiAutoObject.createDirectoryStructure (destinationPath)   
+
+      # create a remap object & parallel tools object
+      parallelTools = GmiParallelTools (task.archType)
+      remapObject = GmiGFIORemapTools ()
+
+
+      exitMutexes = []
+      systemCommands = []
+      count = 0
+      batchCount = 0
+      # process each time record
+      for resolution in self.RESOLUTIONS:
+
+         # process each file prefix
+         for prefix in self.PREFIXES:
+            # process each resolution
+            fileString = task.filePrefix + "." + prefix + \
+                         "." + task.year + task.month + task.day + \
+                         "." + resolution + "."
+
+
+
+            sourceFile = destinationPath + "/" + \
+                         fileString + \
+                         "hdf"
+            destinationFile = destinationPath + "/" + \
+                              fileString + \
+                              "nc"
+
+
+            print("\nstarting new thread")
+            print(self.GEOS5FIELDS)
+            print(sourceFile)
+            print(destinationFile)
+            exitMutexes.append (_thread.allocate_lock())
+
+
+            
+            _thread.start_new(gmiNetCdfObject.doHdfDumpToNetCdfNoFields, \
+                             (self.GEOS5FIELDS, \
+                              sourceFile, \
+                              destinationFile, \
+                              0, exitMutexes[count]))
+                             
+            count = count + 1
+            batchCount = batchCount + 1
+            
+            if batchCount >= 2:
+               print ("\nNumber threads reached 2. Will wait before proceeding...")
+               for mutex in exitMutexes:
+                  while not mutex.locked (): 
+                     pass
+               batchCount = 0
+               print ("\nProceeding...")
+
+               
+
+      #----------------------------------------------------------------
+      #  Wait for all three threads before proceeding 
+      #----------------------------------------------------------------
+      for mutex in exitMutexes:
+         while not mutex.locked (): 
+            pass
+
+      print("All threads returned!")
 
    #---------------------------------------------------------------------------  
    # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC
@@ -455,10 +573,10 @@ class GmiGEOS5DasFields:
             sourceFile = destinationPath + "/" + \
                          fileString + \
                          "hdf"
-            print "sourceFile: ", sourceFile 
-            exitMutexes.append (thread.allocate_lock())
+            print("sourceFile: ", sourceFile) 
+            exitMutexes.append (_thread.allocate_lock())
             
-            thread.start_new(gmiNetCdfObject.doHdf5ToHdf4,\
+            _thread.start_new(gmiNetCdfObject.doHdf5ToHdf4,\
                                 (sourceFile, \
                                     exitMutexes[count]))
                              
@@ -503,7 +621,7 @@ class GmiGEOS5DasFields:
 
       systemCommands = []
 
-      print "PREFIXES: ", self.PREFIXES
+      print("PREFIXES: ", self.PREFIXES)
 
 
 
@@ -514,7 +632,7 @@ class GmiGEOS5DasFields:
                       "." + task.year + task.month + task.day + \
                       ".nc4"
          
-         print fileString
+         print(fileString)
              
          if self.SOURCESTYLE == "GMAO":
             sourceFile = task.sourcePath + self.DIR + "/Y" + \
@@ -523,7 +641,7 @@ class GmiGEOS5DasFields:
          else:
             sourceFile = task.sourcePath + "/" + task.year + \
                          "/" + task.month + "/" + fileString
-         print sourceFile
+         print(sourceFile)
                
          # process each resolution
          for resolution in self.RESOLUTIONS:
@@ -532,10 +650,10 @@ class GmiGEOS5DasFields:
                               fileString[0:len(fileString)-3] + \
                               resolution + ".hdf"
                
-            exitMutexes.append (thread.allocate_lock())
+            exitMutexes.append (_thread.allocate_lock())
 
-            print destinationFile
-            thread.start_new(remapObject.gfioRemap, \
+            print(destinationFile)
+            _thread.start_new(remapObject.gfioRemap, \
                              (sourceFile, \
                               destinationFile, \
                               resolution, \
@@ -552,7 +670,7 @@ class GmiGEOS5DasFields:
          while not mutex.locked (): 
             pass
 
-      print "done regridding"
+      print("done regridding")
 
 
    #---------------------------------------------------------------------------  
@@ -564,7 +682,7 @@ class GmiGEOS5DasFields:
    #--------------------------------------------------------------------------- 
    
    def doFieldExtraction (self, task):
-      print "in Field Extraction"
+      print("in Field Extraction")
 
       # this object contains the routine
       # for the extraction
@@ -578,10 +696,10 @@ class GmiGEOS5DasFields:
                     task.month + task.day + "." +  \
                     resolution + ".nc"
 
-         print self.GEOS5FIELDS
-         print fileName
+         print(self.GEOS5FIELDS)
+         print(fileName)
          returnCode = gmiNetCdfObject.extractSubsetOfVariables (self.GEOS5FIELDS, fileName, \
                                                                 fileName)
          if returnCode != self.constants.NOERROR:
-            print "There was a problem extracting the variables"
+            print("There was a problem extracting the variables")
          

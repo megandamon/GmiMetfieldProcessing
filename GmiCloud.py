@@ -15,9 +15,9 @@ import os
 import sys
 import datetime
 import re
-import thread
+import _thread
 from numpy import *
-from pynetcdf import *
+#from pynetcdf import *
 from GmiNetCdfFileTools import GmiNetCdfFileTools
 from GmiAutomationConstants import GmiAutomationConstants
 
@@ -46,26 +46,27 @@ class GmiCloud:
             ".CLOUD." + year + month + \
             day + "." + nativeRes + ".nc"
 
-        print "in createCloudVars"
+        print("\nin createCloudVars")
 
-        print "native degree file: ", cloudFile
+        print("\nnative degree file: ", cloudFile)
 
         for resolution in ["1x1.25", "2x2.5"]:
             newFileName = re.sub (nativeRes, resolution, cloudFile)
             newFileName = newFileName + ".hdf"
-            print newFileName
+
             sysCommand = self.params.OPTEXEC + " " + cloudFile + " " + newFileName + " " + \
                 resolution + " 8"
-            print sysCommand
+
+            print("\n", sysCommand)
             os.system (sysCommand)
 
             returnCode = netCdfObject.doHdfDumpToNetCdf (['OPTDEPTH', 'TAUCLW', 'TAUCLI', 'CLOUD'], \
                                                              newFileName, \
                                                              newFileName + "opt.nc", \
                                                              0, \
-                                                             thread.allocate_lock())
+                                                             _thread.allocate_lock())
             if returnCode != self.params.NOERROR:
-                raise "Problem dumping tau fields to netcdf"
+                raise Exception("Problem dumping tau fields to netcdf")
             os.remove (newFileName)
 
 
@@ -74,13 +75,10 @@ class GmiCloud:
                 ".tavg3d." + year + month + \
                 day + "." + resolution + ".nc"
 
-            print "low Res File Name: ", lowResFileName
-            print "new file name: ", newFileName + "opt.nc"
-
             returnCode = netCdfObject.mergeFilesIntoNewFile ([newFileName + "opt.nc", lowResFileName], \
                                                          lowResFileName)
             if returnCode != self.params.NOERROR:
-                raise "Problem mergingin files"
+                raise Exception("Problem mergingin files")
 
             os.remove(newFileName + "opt.nc")
 
@@ -101,7 +99,7 @@ class GmiCloud:
         lowResFileName = re.sub ("1x1.25", "2x2.5", fileName)
 
         if not os.path.exists (fileName) or not os.path.exists (lowResFileName):
-            raise "One of these files does not exist: " + fileName + " or " +  lowResFileName
+            raise Exception("One of these files does not exist: " + fileName + " or " +  lowResFileName)
 
         netCdfObject = GmiNetCdfFileTools()
         # create CLOUD for 1x1.25 file
@@ -111,25 +109,25 @@ class GmiCloud:
 
         newFileName = re.sub ("1x1.25", "2x2.5", fileName)
         newFileName = newFileName + ".hdf"
-        print newFileName
+        print(newFileName)
         sysCommand = self.params.OPTEXEC + " " + fileName + " " + newFileName + \
                      " 2x2.5 8"
-        print sysCommand
+        print(sysCommand)
         os.system (sysCommand)
     
         returnCode = netCdfObject.doHdfDumpToNetCdf (['OPTDEPTH', 'TAUCLW', 'TAUCLI', 'CLOUD'], \
                                                          newFileName, \
                                                          newFileName + "opt.nc", \
                                                          0, \
-                                                         thread.allocate_lock())
+                                                         _thread.allocate_lock())
         if returnCode != self.params.NOERROR:
-            raise "Problem dumping tau fields to netcdf"
+            raise Exception("Problem dumping tau fields to netcdf")
         os.remove (newFileName)
 
         returnCode = netCdfObject.mergeFilesIntoNewFile ([newFileName + "opt.nc", lowResFileName], \
                                                          lowResFileName)
         if returnCode != self.params.NOERROR:
-            raise "Problem mergingin files"
+            raise Exception("Problem mergingin files")
         os.remove(newFileName + "opt.nc")
     
         return self.params.NOERROR
@@ -137,50 +135,50 @@ class GmiCloud:
 
     def createOptDepthSimple(fileName):
         if not os.path.exists(fileName):
-            raise fileName, " does not exit!"
+            raise fileName(" does not exit!")
 
         netCdfObject = GmiNetCdfFileTools()
         
         sysCommand = self.params.NCAPPATH + \
-                     "ncap -s \"OPTDEPTH=(TAUCLW+TAUCLI)\" " + \
+                     "ncap2 -s \"OPTDEPTH=(TAUCLW+TAUCLI)\" " + \
                      fileName + " " + fileName + ".tau.nc"
         
-        print sysCommand
+        print(sysCommand)
         returnCode = os.system(sysCommand)
         if returnCode != self.params.SYS_SUCCESS:
-            raise "Problem creating OPTDEPTH with ncap"
+            raise Exception("Problem creating OPTDEPTH with ncap")
         
         returnCode = netCdfObject.mergeFilesIntoNewFile([fileName + ".tau.nc", \
                                                          fileName], fileName)
         if returnCode != "NOERROR":
-            raise "Problem merging the files"
+            raise Exception("Problem merging the files")
         
 
     def createCloudAreaFractionSimple (self, fileName):
         if not os.path.exists(fileName):
-            raise fileName, " does not exit!"
+            raise fileName(" does not exit!")
 
         netCdfObject = GmiNetCdfFileTools()
         
         sysCommand = self.params.NCAPPATH + \
-                     "ncap -s \"CLOUD=(CFAN+CFCU+CFLS)\" " + \
+                     "ncap2 -s \"CLOUD=(CFAN+CFCU+CFLS)\" " + \
                      fileName + " " + fileName + ".cloud.nc"
         
-        print sysCommand
+        print(sysCommand)
         returnCode = os.system(sysCommand)
         if returnCode != self.params.SYS_SUCCESS:
-            raise "Problem creating CLOUD with ncap"
+            raise Exception("Problem creating CLOUD with ncap")
         
         returnCode = netCdfObject.mergeFilesIntoNewFile([fileName + ".cloud.nc", \
                                                          fileName], fileName)
-        print returnCode
+        print(returnCode)
             
 
     
                      
         
     def doSomething(self):
-        print "doSomething"
+        print("doSomething")
         
 
     

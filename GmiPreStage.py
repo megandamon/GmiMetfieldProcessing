@@ -61,11 +61,11 @@ class GmiPreStage:
          path = path + "/"
       
       systemCommand = '/usr/bin/dmget ' + path + pattern + '*'
-      print systemCommand
+      print(systemCommand)
       systemReturnCode = os.system (systemCommand)
 
       if systemReturnCode != 0:
-         print "\n There was an error getting the files with pattern ", pattern, " from archive\n"
+         print("\n There was an error getting the files with pattern ", pattern, " from archive\n")
          return self.constants.BADSYSTEMRETURNCODE 
 
       return self.constants.NOERROR
@@ -80,7 +80,7 @@ class GmiPreStage:
    
    def preStageRemoteData (self, path, pattern, remoteSystem, exitMutex):
 
-      print path, pattern
+      print(path, pattern)
       
       # get a listing of the files 
       autoTool = GmiAutomationTools ()
@@ -93,11 +93,11 @@ class GmiPreStage:
                       remoteSystem + ' ' + self.constants.DMGETPATH \
                       + 'dmget ' + path + pattern + '*'
    
-      print systemCommand
+      print(systemCommand)
       systemReturnCode = os.system (systemCommand)
 
       if systemReturnCode != self.constants.SYS_SUCCESS:
-         print "\n There was an error getting the files with pattern ", pattern, " from archive\n"
+         print("\n There was an error getting the files with pattern ", pattern, " from archive\n")
          return self.constants.BADSYSTEMRETURNCODE 
 
       exitMutex.acquire ()

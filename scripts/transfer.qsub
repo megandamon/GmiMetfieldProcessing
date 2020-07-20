@@ -1,8 +1,5 @@
 #!/usr/local/bin/bash 
-#PBS -N transfer
+#PBS -N MERRA2-process 
 #PBS -q datamove 
-#PBS -l walltime=1:00:00
-#PBS -W group_list=k3002
-#PBS -j eo 
-#PBS -V
+#SBATCH --time=1:00:00
 

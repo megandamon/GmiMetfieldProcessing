@@ -57,7 +57,7 @@ __date__ = '2016/02/02'
 import getopt
 import sys
 import os
-import thread
+import _thread
 import cProfile
 import pstats
 
@@ -78,7 +78,7 @@ from GmiDasTasks import GmiDasTasks
 NUM_ARGS = 1
 
 def usage ():
-    print "usage: GmiProcessMerra2.py [-i]"
+    print("usage: GmiProcessMerra2.py [-i]")
     sys.exit (0)
 
 
@@ -86,7 +86,7 @@ def usage ():
 # START:: Get options from command line
 #---------------------------------------------------------------
 
-print "Initializing config options from input file..."
+print("\nInitializing config options from input file...")
 
 optList, argList = getopt.getopt(sys.argv[1:],'i:')
 if len (optList) != NUM_ARGS:
@@ -148,9 +148,8 @@ profileDir = processDirectory + "profiles/"
 dasTasks = GmiDasTasks (realTime)
 
 
-print "done initializing task info"
+print("\nChecking for lock file. Will exit quietly not to override existing process...\n\n")
 
-print "Checking for lock file. Will exit quietly not to override existing process..."
 #----------------------------------------------------------------
 # Check for the existence of the processing file in the directory
 # If processing, just quit quietly, otherwise create the file
@@ -165,7 +164,7 @@ if not os.path.exists (logFile):
                              autoConstants.ERROR_SUBJECT, \
                              mailTo, lockFile)
 
-print "Constructing each task in memory and on disk..."
+print("\nConstructing each task in memory and on disk...")
 
 #----------------------------------------------------------------
 # Construct the tasks in memory and on disk
@@ -174,18 +173,18 @@ try:
    gmiAutomationObject.createTasks (configOptions, processDirectory, mailTo, \
                                     realTime, taskFile)
 except:
-   ioRoutines.errorAndQuit ("Creating the MERRA-2 regridding tasks failed " \
+   ioRoutines.errorAndQuit ("\nCreating the MERRA-2 regridding tasks failed " \
                             + "due to the exception:" + \
                             str (sys.exc_info ()), autoConstants.ERROR_SUBJECT, \
                             mailTo, lockFile)
 
-print "Setting up fetching information..."
+print("\n\nSetting up data fetching ...")
 
 if sourcePath == 'ftp':
     ftpScript = processDirectory + "scripts/" + gmiAutomationObject.tasks[0].filePrefix + ".bash"
 
 else: 
-    print "non ftp staging sourcePath: ", sourcePath
+    print("\nnon ftp staging sourcePath: ", sourcePath)
 
 newTasks = []
 for task in gmiAutomationObject.tasks:
@@ -223,7 +222,7 @@ if len (gmiAutomationObject.tasks) == 0:
 
 
 
-print " About to process tasks..."
+print("\n\nAbout to process tasks...")
 
 
 
@@ -236,9 +235,9 @@ taskCount = 0
 #exitMutexes = []
 
 for task in gmiAutomationObject.tasks:
-     dasTasks.removeInterFiles (task, dasObjects)
+    dasTasks.removeInterFiles (task, dasObjects)
 
-print "Entering task loop..."
+print("\nEntering task loop...")
 
 try:
     for task in gmiAutomationObject.tasks:
@@ -247,18 +246,18 @@ try:
         entry = task.filePrefix + task.year \
             + task.month + task.day
 
-        print "Copying data for :  ", task.year, task.month, task.day
+        print("\nCopying data for :  ", task.year, task.month, task.day)
 
         task.sourcePath = sourcePath
 
-        print "Source path: ", sourcePath
-        print "Task source path: ", task.sourcePath
+        print("\nSource path: ", sourcePath)
+        print("\nTask source path: ", task.sourcePath)
 
         try:
             dasTasks.copyMerra2DataToWorkingDir (task, dasObjects, \
                                                      archiveSystem, transferFile, \
                                                      processDirectory, \
-                                                     thread.allocate_lock(), mailTo, \
+                                                     _thread.allocate_lock(), mailTo, \
                                                      ftpScript)
         except:
             ioRoutines.errorAndQuit ("Aborting MERRA2 regridding after copying failed " \
@@ -270,36 +269,15 @@ try:
         profileTaskFile = profileDir + "task." + entry + ".profile"
         if os.path.exists (profileTaskFile): os.remove (profileTaskFile)
         if preStageOnly != "true":        
-            print "Processing: ", entry
-            #cProfile.run('dasTasks.processTask (task, dasObjects, task.destinationPath, \
-            #                      processDirectory, archiveDirectory, archiveSystem, \
-            #                      levsFile, constFieldsPath, mailTo, logFile, \
-            #                      configFile, taskFile, \
-            #                      transferFile)', profileTaskFile)
+            print("\nProcessing: ", entry)
             returnCode = dasTasks.processTask (task, dasObjects, task.destinationPath, \
                                                    processDirectory, archiveDirectory, archiveSystem, \
                                                    levsFile, constFieldsPath, mailTo, logFile, \
                                                    configFile, taskFile, \
                                                    transferFile)
         else:
-            print "Running in PRESTAGE_ONLY mode.  Will not do any processing."
+            print("\nRunning in PRESTAGE_ONLY mode.  Will not do any processing.")
             
-
-
-        print "Waiting for pre-staging thread"
-        #----------------------------------------------------------------
-        #  Wait for the thread that is pre-staging before continuing
-        #----------------------------------------------------------------
-        #for mutex in exitMutexes:
-        #    while not mutex.locked (): 
-        #        pass
-
-        #print "Profiling for: ", entry, " (also in: ", profileTaskFile
-        #p = pstats.Stats (profileTaskFile)
-        #p.sort_stats('name')
-        #p.print_stats()
-
-        print "done with task: ", taskCount
 
         taskCount = taskCount + 1
         if taskCount <= len(gmiAutomationObject.tasks)-1:
@@ -310,7 +288,7 @@ try:
 
            
 except:
-    ioRoutines.errorAndQuit ("Aborting MERRA2 regridding due to the exception:" \
+    ioRoutines.errorAndQuit ("\nAborting MERRA2 regridding due to the exception:" \
                              + str (sys.exc_info ()), autoConstants.ERROR_SUBJECT, \
                              mailTo, lockFile)
     
@@ -320,6 +298,7 @@ except:
 #----------------------------------------------------------------
 # END:: Exit and remove lock file
 #----------------------------------------------------------------
-print "Releasing lock file: ", lockFile
+print("\n\nReleasing lock file: ", lockFile, "\n")
+
 comUtilities.releaseLockFileAndQuit (lockFile)
 

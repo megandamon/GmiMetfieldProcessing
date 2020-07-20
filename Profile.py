@@ -8,7 +8,7 @@ def someFunction ():
     sleep (30)
     
 
-print "Profiler"
+print("Profiler")
 cProfile.run('someFunction ()', 'profile.out')
 p = pstats.Stats('profile.out')
 p.sort_stats('name')

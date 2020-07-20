@@ -17,7 +17,7 @@ from GmiNetCdfFileTools import GmiNetCdfFileTools
 
 import sys
 import os
-import thread
+import _thread
 
 class GmiDasFieldsInstantSurface (GmiDasFields):
    
@@ -83,14 +83,14 @@ class GmiDasFieldsInstantSurface (GmiDasFields):
    
    def processDasFields (self, task, exitMutex):
       
-      print "calling parent"
+      print("calling parent")
       
       #------------------------------------------------------------------------
       # call the parent routine
       returnCode = GmiDasFields.processDasFields (self, task)
       if returnCode != self.constants.NOERROR:
          
-         print "\nThere was a problem processing the das fields in the parent routine!\n"
+         print("\nThere was a problem processing the das fields in the parent routine!\n")
          exitMutex.acquire ()
          return self.constants.ERROR  
       
@@ -104,7 +104,7 @@ class GmiDasFieldsInstantSurface (GmiDasFields):
                                                       self.HORIZONTALREGRIDNAMELISTFILE [1], \
                                                       self.HORIZONTALGRIDFILE [1], "4x5")
       if returnCode != self.constants.NOERROR:
-         print "Problem doing 4x5 horizontal regrid for ", self.FILETYPE
+         print("Problem doing 4x5 horizontal regrid for ", self.FILETYPE)
          exitMutex.acquire ()
          return returnCode              
       

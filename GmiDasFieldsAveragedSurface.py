@@ -14,7 +14,7 @@
 from GmiDasFields import GmiDasFields
 from GmiAutomationConstants import GmiAutomationConstants
 
-import thread
+import _thread
 import os
 
 class GmiDasFieldsAveragedSurface (GmiDasFields):
@@ -88,7 +88,7 @@ class GmiDasFieldsAveragedSurface (GmiDasFields):
       returnCode = GmiDasFields.processDasFields (self, task)
       if returnCode != self.constants.NOERROR:
          
-         print "\nThere was a problem processing the das fields in the parent routine!\n"
+         print("\nThere was a problem processing the das fields in the parent routine!\n")
          exitMutex.acquire()
          return self.constants.ERROR  
       
@@ -106,7 +106,7 @@ class GmiDasFieldsAveragedSurface (GmiDasFields):
                                                       self.HORIZONTALREGRIDNAMELISTFILE [1], \
                                                       self.HORIZONTALGRIDFILE [1], "4x5")
       if returnCode != self.constants.NOERROR:
-         print "Problem doing 4x5 horizontal regrid for ", self.FILETYPE
+         print("Problem doing 4x5 horizontal regrid for ", self.FILETYPE)
          exitMutex.acquire()
          return returnCode              
       

@@ -11,6 +11,8 @@
 # DESCRIPTION:
 # This is the class for the tavg3_ fields (averaged)
 #------------------------------------------------------------------------------
+
+
 from GmiAutomationConstants import GmiAutomationConstants
 from GmiAutomationTools import GmiAutomationTools
 from GmiNetCdfFileTools import GmiNetCdfFileTools
@@ -21,26 +23,35 @@ from GmiPreStage import GmiPreStage
 from GmiParallelTools import GmiParallelTools
 from GmiGFIORemapTools import GmiGFIORemapTools
 from IoRoutines import IoRoutines
+
+
 import os
 import re
 import sys
-import thread
+import _thread
 from numpy import *
-from pynetcdf import *
+
+
 from datetime import datetime
 from datetime import timedelta
 
 
 class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
+   
    def __init__(self):
+      
+      # call parent driver first
       GmiGEOS5DasFields.__init__(self)
+
       self.netCdfObject = GmiNetCdfFileTools ()      
+
       self.SOURCESTYLE = "GMAO"
       self.TYPE = "avg3D"
       self.GMIPREFIX = "tavg3d"
       self.DIR = "diag"
       self.RECORDS = []
       self.AVERAGEDRECORDS = self.RECORDS
+
       self.resetPrefixesAndFields ()
       
    def __del__(self):
@@ -106,54 +117,85 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
    # The routine that drives the processing for the avg 3d fields.
    #---------------------------------------------------------------------------    
    def prepareGEOSFields (self, task):
+
       self.basePath = task.destinationPath + "/" + \
-                      task.year + "/" + task.month + \
-                      "/" + task.filePrefix + "."
+         task.year + "/" + task.month + \
+         "/" + task.filePrefix + "."
       self.endPath = "." + task.year + task.month + \
-                     task.day
+         task.day
                   
       self.PREFIXES.append ("tavg3_3d_cld_Nv_set2")      
       self.PREFIXES.append ("tavg3_3d_mst_Ne_set2")
       self.PREFIXES.append ("tavg3_3d_asm_Nv_set2")
    
       # extract only the needed variables first
-      print "Extracting necessary Avg3D fields..."
+      print("\nExtracting Avg3D fields ...")
       self.doFieldExtraction (task)
-      print "done with field extraction"
 
-      print "Avg3D is calling the parent regridAndDumpHdfFiles routine"
-      self.regridAndDumpHdfFiles (task)
-      print "done with regrid and dump to HDF"
+      print("\nAvg3D is calling the parent regridAndDumpHdfFiles routine")
+      self.regridAndDumpHdfFilesTwoThreads (task)
 
-      print "Extracting and saving lat, lev, and time dimensions"
+      
+      print("\nExtracting and saving lat, lev, and time dimensions")
       self.extract1DVariables (task)
-      print "Done extracting and saving lat, lev, and time dimensions"
 
-      print "Resolving fake dimensions"
-      self.resolveFakeDimensions (task)
-      print "Done resolving fake dimensions"   
 
-      print "Extracting time records..."
+
+
+      #Currently not needed, as the convertion from HDF5 to 4
+      #is no longer being executed
+      #print("Resolving fake dimensions")
+      #self.resolveFakeDimensions (task)
+      #print("Done resolving fake dimensions")   
+
+      
+      print("\nExtracting time records...")
       GmiGEOS5DasFields.extractTimeRecords (self, task, "time", "0", "7", "1")
-      print "Done extracting time records"
 
-      print "Calculating OPTDEPTH 0.625 degree only "
+
+      
+      print("\nCalculating OPTDEPTH 0.625 degree only ")
       self.extractCloudFieldsNativeGrid (task)
-      print "Done with calculating optical depth 0.625 degree only"
 
-      print "Merging the collections..."
+
+
+
+      
+      # rename 73 level variables to lev_edges
+      # needed for the merge later      
+      for prefix in ["tavg3_3d_trb_Ne", "tavg3_3d_mst_Ne", "tavg3_3d_mst_Ne_set2"]:
+
+         for resolution in [ "1x1.25", "2x2.5", "0.625x0.5"]:
+            fileString = "MERRA2_400." + prefix + \
+               "." + task.year + task.month + task.day + "." + \
+               resolution + ".nc"
+      
+            fileName = task.destinationPath + "/" + \
+               task.year + "/" + task.month + \
+               "/" + fileString
+
+            print("\nWill rename lev to lev_edges in ", fileName)
+            self.netCdfObject.renameFields (["lev"], ["lev_edges"], "-v", fileName)
+            self.netCdfObject.renameFields (["lev"], ["lev_edges"], "-d", fileName)         
+
+
+
+      print("\nMerging the collections...")
       self.mergeAllFilesIntoOne (task)
-      print "done with merging across 3D types"   
 
-      print "Making time dimension a record dimension"
+
+      # This takes a long time.      
+      print("\nMaking time dimension a record dimension - this takes a while.")
       GmiGEOS5DasFields.makeTimeDimRecordDim (self, task)
-      print "Done Making time dimension a record dimension"
 
-      print "Removing CLOUD fields from lower resolution files"
+
+      print("\nRemoving CLOUD fields from lower resolution files")
       self.removeCloudFieldsFromLowRes (task)
-      print "Done removing CLOUD fields from lower resolution files"
 
-      print "Avg3D exiting"
+      
+      print("\nAvg3D exiting")
+
+      
 
 
    # we do this because we will generate the lower res CLOUD fields
@@ -161,7 +203,7 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
    # see GmiDasTasks module
    def removeCloudFieldsFromLowRes (self, task):
 
-      print "In removeCloudFieldsFromLowRes routine"
+      print("\nIn removeCloudFieldsFromLowRes routine")
 
       basePath = task.destinationPath + "/" + \
                  task.year + "/" + task.month + \
@@ -175,7 +217,7 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
       NOCLOUDFIELDS.remove ("lat")
       NOCLOUDFIELDS.remove ("lon")
       NOCLOUDFIELDS.remove ("lev")
-      NOCLOUDFIELDS.remove ("lev_edges")
+#      NOCLOUDFIELDS.remove ("lev_edges")
       
 
       for resolution in [ "1x1.25", "2x2.5" ]:
@@ -184,28 +226,27 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
              task.month + task.day + "." + \
              resolution + ".nc"
 
-         print "outFileName: ", outFileName
+         print("\noutFileName: ", outFileName)
 
          returnCode = self.netCdfObject.extractSubsetOfVariables (NOCLOUDFIELDS, \
                                                                      outFileName, outFileName)
          if returnCode != self.constants.NOERROR:
-            print "There was a problem extracting the fields without the cloud vars!"
+            print("There was a problem extracting the fields without the cloud vars!")
             return self.constants.ERROR
 
  
 
    def doFieldExtraction (self, task):
-      print "in doFieldExtraction"
+      print("\nStarting Avg3D field extractions - serial processes.")
 
       # this object contains the routine
       # for the extraction
-      gmiNetCdfObject = GmiNetCdfFileTools ()
 
       for prefix in self.PREFIXES:
 
          subfix = "_set2"
          if subfix in prefix: 
-            print prefix
+            print(prefix)
             fileString = task.filePrefix + "." + prefix.replace(subfix,"") + \
                 "." + task.year + task.month + task.day + \
                 ".nc4"
@@ -223,15 +264,15 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
              task.filePrefix + "." + prefix + "." + task.year + task.month + task.day + \
              ".extracted.nc4"
 
-         print fileName
-         print outFileName
-         print self.fieldMap[prefix]
+         #print(fileName)
+         print("\n", outFileName)
+         print(self.fieldMap[prefix])
 
-         returnCode = gmiNetCdfObject.extractSubsetOfVariables (self.fieldMap[prefix], fileName, \
+         returnCode = self.netCdfObject.extractSubsetOfVariables (self.fieldMap[prefix], fileName, \
                                                                    outFileName)
 
          if returnCode != self.constants.NOERROR:
-            print "There was a problem extracting the variables"
+            print("There was a problem extracting the variables")
             
 
       for prefix in self.PREFIXES:
@@ -251,15 +292,8 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
          systemCommand = "cp " + fileName + " " + outFileName
          returnCode = os.system(systemCommand)
          
-         print "returnCode: ", returnCode
+         print("\nreturnCode: ", returnCode)
 
-         if prefix == "tavg3_3d_trb_Ne":
-            print "about to rename lev lev_edges"
-            gmiNetCdfObject.renameFields (["lev"], ["lev_edges"], "-v", outFileName)
-            self.GEOS5FIELDS.append ("lev_edges")
-            self.fieldMap["tavg3_3d_trb_Ne"] = ["KH", "lev_edges"]
-
-         
 
    #---------------------------------------------------------------------------  
    # AUTHORS: Megan Damon NASA GSFC / SSAI
@@ -268,13 +302,18 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
    #---------------------------------------------------------------------------  
 
    def regridAndDumpHdfFiles (self, task):
-      print "Starting Avg3D regridAndDumpHdfFiles"
+
       try:
+         print("\nStarting Avg3D regridAndDumpHdfFiles")
          self.regridFilesAllResolutions (task)
-         GmiGEOS5DasFields.convertHdf5ToHdf4 (self, task)
-         print "Dumping converting hdf5 to hdf4"
+
+         #This step is not necesary, but if it is done
+         # it may require editing the metadata of the HDF data
+         #GmiGEOS5DasFields.convertHdf5ToHdf4 (self, task)
+
+         print("\nDumping fieldsToNetcdf")
          GmiGEOS5DasFields.dumpFieldsToNetcdf (self, task)
-         print "Done dumping to netcdf"
+
       except: 
          raise
 
@@ -285,7 +324,8 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
    #---------------------------------------------------------------------------  
 
    def regridFilesAllResolutions (self, task):
-      print "Starting Avg3D regridFilesAllResolutions"
+
+      print("\nStarting Avg3D regridFilesAllResolutions")
       
       # construct the destination path
       gmiAutoObject = GmiAutomationTools ()
@@ -303,10 +343,9 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
       count = 0
 
       parallelTools = GmiParallelTools(task.archType)
-
       systemCommands = []
 
-      print "PREFIXES: ", self.PREFIXES
+#      print("PREFIXES: ", self.PREFIXES)
 
       for prefix in self.PREFIXES:
 
@@ -314,7 +353,7 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
                       "." + task.year + task.month + task.day + \
                       ".nc4"
          
-         print fileString
+         print("\n file string is: ", fileString)
              
          if self.SOURCESTYLE == "GMAO":
             sourceFile = task.sourcePath + self.DIR + "/Y" + \
@@ -323,7 +362,6 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
          else:
             sourceFile = task.sourcePath + "/" + task.year + \
                          "/" + task.month + "/" + fileString
-         print sourceFile
                
          # process each resolution
          for resolution in ["1x1.25", "2x2.5", "0.625x0.5"]:
@@ -334,17 +372,23 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
                
 
 
-            print destinationFile
+
 
             if resolution == "0.625x0.5": 
+
+               print("\nCreating file using cp: ", destinationFile)
+               
                systemCommand = "cp " + sourceFile + " " + destinationFile
-               print systemCommand
+               print("\n", systemCommand)
                sysOut = os.system(systemCommand)
-               print "return Code: ", sysOut
+               print("\nReturn Code: ", sysOut)
 
             else: 
-               exitMutexes.append (thread.allocate_lock())
-               thread.start_new(remapObject.gfioRemap, \
+
+               print("\nCreating file using gfioRemap: ", destinationFile)
+
+               exitMutexes.append (_thread.allocate_lock())
+               _thread.start_new(remapObject.gfioRemap, \
                                    (sourceFile, \
                                        destinationFile, \
                                        resolution, \
@@ -361,7 +405,7 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
          while not mutex.locked (): 
             pass
 
-      print "done regridding"
+      print("done regridding")
 
 
    #---------------------------------------------------------------------------  
@@ -372,44 +416,44 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
    #---------------------------------------------------------------------------  
    def extract1DVariables (self, task):
 
-      print "in extract1DVariables()"
+      print("in extract1DVariables()")
 
       basePath = self.basePath
       basePathWithDate = self.basePath + task.year + task.month + task.day + "."
-      print "basePath: ", basePath
-      print "basePathWithDate: ", basePathWithDate
 
       for resolution in ["1x1.25", "2x2.5", "0.625x0.5"]:
          filesToMerge = []
 
          fileName = basePath + "tavg3_3d_cld_Nv"  + self.endPath + "." + resolution + ".nc"
 
-         print "fileName: ", fileName
+         print("fileName: ", fileName)
 
          for var in ['lat', 'lon', 'time', 'lev']:
 
             newFileName = basePathWithDate + var + "." + resolution + ".nc"
-            print "newFileName: ", newFileName
+            print("newFileName: ", newFileName)
 
             if os.path.exists (newFileName): os.remove(newFileName)
 
             self.netCdfObject.extractSubsetOfVariables ([var], fileName, newFileName)
-            self.netCdfObject.resolveFieldDimensions (newFileName, 0, [var], [var], thread.allocate_lock())
+
+            #self.netCdfObject.resolveFieldDimensions (newFileName, 0, [var], [var], _thread.allocate_lock())
 
             
             filesToMerge.append (newFileName)
 
-         print "FILES TO MERGE: ", filesToMerge
+         print("FILES TO MERGE: ", filesToMerge)
+
          self.netCdfObject.mergeFilesIntoNewFile (filesToMerge, basePathWithDate + "1D." + resolution + ".nc")
 
          for file in filesToMerge:
-            print "Removing this file: ", file
+            print("Removing this file: ", file)
             if os.path.exists (file): os.remove(file)
 
-                                                     
+
                 
    def resolveFakeDimensions (self, task):      
-      print "about to start threads for resolving dimensions..."
+      print("about to start threads for resolving dimensions...")
 
       netCdfObject = GmiNetCdfFileTools ()
       exitMutexes = []
@@ -429,12 +473,12 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
             else:
                dimensions = ['time', 'lev', 'lat', 'lon']
 
-            print "resolving dimensions for: ", fileName
-            print self.fieldMap [prefix]
+            print("resolving dimensions for: ", fileName)
+            print(self.fieldMap [prefix])
 
             # for each file type fix the fake dimensions
-            exitMutexes.append (thread.allocate_lock())
-            thread.start_new (netCdfObject.resolveFieldDimensions, \
+            exitMutexes.append (_thread.allocate_lock())
+            _thread.start_new (netCdfObject.resolveFieldDimensions, \
                 (fileName, count, self.fieldMap[prefix], dimensions, exitMutexes[count]))
             
             count = count + 1
@@ -446,7 +490,7 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
          while not mutex.locked (): 
             pass
     
-      print "All threads returned from resolveFieldDimensions"
+      print("All threads returned from resolveFieldDimensions")
 
       
                
@@ -491,29 +535,29 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
       returnCode = self.netCdfObject.extractSubsetOfVariables \
           (["TAUCLI", "TAUCLW"], tauInputFile, cloudFileOut1)
 
-      print "returnCode after TAUCLI and TAUCLW extraction: ", returnCode
+      print("\nreturnCode after TAUCLI and TAUCLW extraction: ", returnCode)
 
       returnCode = self.netCdfObject.extractSubsetOfVariables \
           (["CLOUD"], cloudInputFile, cloudFileOut2)
 
-      print "returnCode after CLOUD extraction: ", returnCode 
+      print("\nreturnCode after CLOUD extraction: ", returnCode) 
 
       optDepthFile = task.sourcePath + "/" + task.year + "/" + task.month + \
           "/" + task.filePrefix + ".tavg3_3d_optDepth." + task.year + \
           task.month + task.day + "." + resolution + ".nc"
       systemCommand = constants.NCAPPATH + \
-          "ncap -s \"OPTDEPTH=(TAUCLI+TAUCLW)\" " + \
+          "ncap2 -s \"OPTDEPTH=(TAUCLI+TAUCLW)\" " + \
           cloudFileOut1 + " " + optDepthFile
          
-      print systemCommand
+      print("\n", systemCommand)
       returnCode = os.system (systemCommand)
-      print "returnCode from ncap command which creates OPTDEPTH: ", returnCode
+      print("\nreturnCode from ncap command which creates OPTDEPTH: ", returnCode)
 
 
       # put OPTDEPTH into cloudFileOut
       returnCode = self.netCdfObject.mergeFilesIntoNewFile ([optDepthFile, cloudFileOut1, cloudFileOut2], \
                                                                cloudFileOut)
-      print "returnCode from merging files: ", returnCode
+      print("\nreturnCode from merging files: ", returnCode)
       
       # this was probably nice, but then stopped working at some point
       #self.netCdfObject.addAttributesToFile(cloudFileOut, "visible_optical_depth", "1", "OPTDEPTH")
@@ -521,7 +565,7 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
       # Since this file will not be part of the regular collections
       # make the time dimension a record dim here
       returnCode = self.netCdfObject.makeDimensionRecordDimension (cloudFileOut, 'time')
-      print "returnCode from making time record dimension: ", returnCode
+      print("\nreturnCode from making time record dimension: ", returnCode)
          
    #---------------------------------------------------------------------------  
    # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC
@@ -537,8 +581,8 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
 
       for resolution in self.RESOLUTIONS:
 
-         exitMutexes.append (thread.allocate_lock ())
-         thread.start_new (self.mergePrefixes, \
+         exitMutexes.append (_thread.allocate_lock ())
+         _thread.start_new (self.mergePrefixes, \
                            (task, resolution, exitMutexes[count]))
          count = count + 1
 
@@ -565,7 +609,6 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
 
       fileNames = []
       for prefix in self.PREFIXES:
-         print prefix
          metFile = ""
          newFile = basePath + \
                    task.filePrefix + "." + \
@@ -581,12 +624,11 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
                     task.month + task.day + "." + \
                     resolution + ".nc"
 
-      print "merging the files: ", fileNames
 
       self.netCdfObject.mergeFilesIntoNewFile ( \
                fileNames, outFileName)
          
-      print "mergePrefixes ACQUIRING MUTEX"
+      print("\nmergePrefixes ACQUIRING MUTEX for resolution: ", resolution)
       exitMutex.acquire ()
 
 

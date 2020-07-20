@@ -23,13 +23,16 @@ from GmiParallelTools import GmiParallelTools
 import os
 import re
 import sys
-import thread
+import _thread
 from time import sleep
 from datetime import datetime
 from datetime import timedelta
 
+
+
 class GmiGEOS5DasAvg2D (GmiGEOS5DasFields):
    def __init__(self):
+      
       GmiGEOS5DasFields.__init__(self)
       self.netCdfObject = GmiNetCdfFileTools ()      
       self.TYPE = "avg2D"
@@ -121,42 +124,37 @@ class GmiGEOS5DasAvg2D (GmiGEOS5DasFields):
    # The routine that drives the processing for the avg 2d fields.
    #---------------------------------------------------------------------------    
    def prepareGEOSFields (self, task):
+
       self.basePath = task.destinationPath + "/" + \
                       task.year + "/" + task.month + \
                       "/" + task.filePrefix + "."
       self.endPath = "." + task.year + task.month + \
                      task.day
 
-      print "in Avg 2D processing routine ..."      
 
       # call the parent routine
-      print "First stage processing"
+      print("\nFirst stage processing")
       GmiGEOS5DasFields.regridAndDumpHdfFiles (self, task)
-      print "Completed first stage processing"
       
-      print "Resolving fake dimensions"
-      self.resolveFakeDimensions (task)
-      print "Done resolving fake dimensions" 
+      # print("Resolving fake dimensions")
+      # self.resolveFakeDimensions (task)
+      # print("Done resolving fake dimensions") 
 
-      print "Extract 3-hour records"
+      print("\nExtract 3-hour records")
       GmiGEOS5DasFields.extractTimeRecords (self, task, "time", "0", "23", "3")
-      print "Done extracting time records"
       
       # call the merge routine
-      print "Merging Avg2D files"
+      print("\nMerging Avg2D files")
       self.mergeAllFilesIntoOne (task)
-      print "done merging across records"
 
-      print "Extracting necessary Avg2D fields"
+      print("\nExtracting necessary Avg2D fields")
       # extract only the needed variables
       GmiGEOS5DasFields.doFieldExtraction (self, task)
-      print "done with field extraction"
 
-      print "Making time dimension a record dimension"
+      print("\nMaking time dimension a record dimension")
       GmiGEOS5DasFields.makeTimeDimRecordDim (self, task)
-      print "Done Making time dimension a record dimension"
 
-      print "Avg2D exiting"
+      print("\nAvg2D exiting")
 
 
 
@@ -164,7 +162,7 @@ class GmiGEOS5DasAvg2D (GmiGEOS5DasFields):
    def resolveFakeDimensions (self, task):      
       netCdfObject = GmiNetCdfFileTools ()
 
-      print "about to start threads for resolving dimensions..."
+      print("\n About to start threads for resolving dimensions...")
 
       exitMutexes = []
       count = 0
@@ -174,8 +172,8 @@ class GmiGEOS5DasAvg2D (GmiGEOS5DasFields):
             if not os.path.exists (fileName): raise fileName + " does not exist! ERROR"
 
             # for each file type fix the fake dimensions
-            exitMutexes.append (thread.allocate_lock())
-            thread.start_new (netCdfObject.resolveFieldDimensions, \
+            exitMutexes.append (_thread.allocate_lock())
+            _thread.start_new (netCdfObject.resolveFieldDimensions, \
                 (fileName, count, self.GEOS5FIELDS, ['time', 'lat', 'lon'], exitMutexes[count]))
             
             count = count + 1
@@ -188,7 +186,7 @@ class GmiGEOS5DasAvg2D (GmiGEOS5DasFields):
             pass
     
 
-      print "All threads returned from resolveFieldDimensions"
+      print("All threads returned from resolveFieldDimensions")
 
       
    #---------------------------------------------------------------------------  
@@ -204,10 +202,10 @@ class GmiGEOS5DasAvg2D (GmiGEOS5DasFields):
       parallelTools = GmiParallelTools (task.archType)
 
       systemCommands = []
-      print self.RESOLUTIONS
+      print(self.RESOLUTIONS)
       for resolution in self.RESOLUTIONS:
-         exitMutexes.append (thread.allocate_lock ())
-         thread.start_new (self.mergeAveragedRecords, \
+         exitMutexes.append (_thread.allocate_lock ())
+         _thread.start_new (self.mergeAveragedRecords, \
                            (task, resolution, exitMutexes[count]))
          count = count + 1
          
@@ -250,6 +248,6 @@ class GmiGEOS5DasAvg2D (GmiGEOS5DasFields):
       netCdfObject.mergeFilesIntoNewFile ( \
                fileNames, outFileName)
 
-      print "mergeAveragedRecords ACQUIRING MUTEX"
+      print("\nmergeAveragedRecords ACQUIRING MUTEX for: ", resolution)
       exitMutex.acquire ()
 

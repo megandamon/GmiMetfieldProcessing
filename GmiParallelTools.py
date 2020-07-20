@@ -16,7 +16,7 @@ from GmiAutomationConstants import GmiAutomationConstants
 from CommonUtilities import CommonUtilities
 from IoRoutines import IoRoutines
 
-import thread
+import _thread
 from time import time
 import os
 import sys
@@ -63,8 +63,8 @@ class GmiParallelTools:
 
       self.verifyArchitectureType ()
 
-      print "numArgs:", numArgs
-      print "args:", args
+      print("numArgs:", numArgs)
+      print("args:", args)
 
       # copy arguments into a new array
       newArgs = []
@@ -77,13 +77,13 @@ class GmiParallelTools:
 
       elif self.archType == 'shared_mem':
          newArgs.append('yes')
-         thread.start_new (theFunc, \
+         _thread.start_new (theFunc, \
                            (newArgs,))
          
       elif self.archType == 'dist_mem':
-         print "in dist_mem"
+         print("in dist_mem")
          newArgs.append('no')
-         print "newArgs: ", newArgs
+         print("newArgs: ", newArgs)
          sysCommands.append (newArgs)
 
 
@@ -101,14 +101,14 @@ class GmiParallelTools:
       if self.archType != 'dist_mem':
          message = "The distributeIndependentTasksAndExec " + \
                    "routine is only intended for distributed architectures!"
-         print message
+         print(message)
          return
 
       execFileName = self.prepareExecFile (sysCommands)
-      if os.path.exists(execFileName): print "it exists!"
+      if os.path.exists(execFileName): print("it exists!")
       
       self.callPodsAndExec (execFileName)
-      print "after calls PodsAndExec"
+      print("after calls PodsAndExec")
       self.removeFilesFromTemp ()
       
    #---------------------------------------------------------------------------  
@@ -137,10 +137,10 @@ class GmiParallelTools:
  
    def callPodsAndExec (self, execFileName):
 
-      if os.path.exists (execFileName): print "stil exists!"
-      else: print "where did it go?" 
+      if os.path.exists (execFileName): print("stil exists!")
+      else: print("where did it go?") 
       cmd = self.constants.PODSPATH + "pods.py " + execFileName + " 1"
-      print cmd
+      print(cmd)
       os.system (cmd)
       
    #---------------------------------------------------------------------------  

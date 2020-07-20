@@ -211,25 +211,25 @@ class GmiAutomationTools:
    def printTasks (self):
       
       if len (self.tasks) == 0:
-         print "There are no tasks."
+         print("There are no tasks.")
          return self.constants.NOERROR
       
-      print "There are", len (self.tasks), "task(s)."
-      print "\n"
+      print("There are", len (self.tasks), "task(s).")
+      print("\n")
       
       taskCounter = 0
       while taskCounter < len (self.tasks):
          
-         print "Task", taskCounter+1, ":"
-         print "Number of days to process:", self.tasks[taskCounter].numberOfDays
-         print "First day:", self.tasks[taskCounter].firstDay
-         print "Destination path:", self.tasks[taskCounter].destinationPath
-         print "Source path:", self.tasks[taskCounter].sourcePath
-         print "File prefix:", self.tasks[taskCounter].filePrefix
-         print "Year:", self.tasks[taskCounter].year
-         print "Month:", self.tasks[taskCounter].month
-         print "Day:", self.tasks[taskCounter].day
-         print "\n"
+         print("Task", taskCounter+1, ":")
+         print("Number of days to process:", self.tasks[taskCounter].numberOfDays)
+         print("First day:", self.tasks[taskCounter].firstDay)
+         print("Destination path:", self.tasks[taskCounter].destinationPath)
+         print("Source path:", self.tasks[taskCounter].sourcePath)
+         print("File prefix:", self.tasks[taskCounter].filePrefix)
+         print("Year:", self.tasks[taskCounter].year)
+         print("Month:", self.tasks[taskCounter].month)
+         print("Day:", self.tasks[taskCounter].day)
+         print("\n")
          
          taskCounter = taskCounter + 1
       
@@ -293,7 +293,7 @@ class GmiAutomationTools:
             systemCommand = self.constants.MKDIRPATH + 'mkdir ' + growingPath
             systemReturnCode = os.system (systemCommand)
             if systemReturnCode != 0:
-               print "Error! returnCode is: ", systemReturnCode, " after attempting to create the directory: ", growingPath, "\n"
+               print("Error! returnCode is: ", systemReturnCode, " after attempting to create the directory: ", growingPath, "\n")
                return self.constants.BADSYSTEMRETURNCODE 
          
       return self.constants.NOERROR
@@ -355,7 +355,7 @@ class GmiAutomationTools:
          fileContents = fileObject.read ()
          fileObject.close ()
       except:
-         print "Error! returnCode is: ", returnCode, " after attempting to read ", fileName, "\n"
+         print("Error! returnCode is: ", returnCode, " after attempting to read ", fileName, "\n")
          return self.constants.READERROR
       
       fileLines = fileContents.splitlines()
@@ -380,7 +380,7 @@ class GmiAutomationTools:
       systemReturnCode = os.system (systemCommand)
 
       if systemReturnCode != 0:
-         print "Error! returnCode is: ", systemReturnCode, " after attempting to use the incrdate program!", "\n"
+         print("Error! returnCode is: ", systemReturnCode, " after attempting to use the incrdate program!", "\n")
          os.remove (tempFileName)
          return self.constants.BADSYSTEMRETURNCODE 
       
@@ -391,7 +391,7 @@ class GmiAutomationTools:
          fileObject.close ()
          os.remove (tempFileName)
       except:
-         print "Error after reading the next day from file!"
+         print("Error after reading the next day from file!")
          os.remove (tempFileName)
          return self.constants.READERROR
       
@@ -420,7 +420,7 @@ class GmiAutomationTools:
       # get the next day in the file
       self.tasks[0].firstDay = self.getNextDateFromFile (fileName, processDirectory)
       if len (self.tasks[0].firstDay) != GmiMetFieldTask.LENGHTOFEXPECTEDDATESTRING:
-         print "There was an error getting the NextDateFromFile !\n"
+         print("There was an error getting the NextDateFromFile !\n")
          return self.constants.ERROR
       
       self.tasks[0].numberOfDays = 1
@@ -544,7 +544,7 @@ class GmiAutomationTools:
          fileObject.write (task.filePrefix + '\n')
          fileObject.close ()      
       except:
-         print "There was an error appending to the file: ", fileName, "\n"
+         print("There was an error appending to the file: ", fileName, "\n")
          return self.constants.WRITEERROR
       
       return self.constants.NOERROR
@@ -738,7 +738,7 @@ class GmiAutomationTools:
                                       "only one tasks at a time is allowed", \
                                       GmiAutomationTools.constants.ERROR_SUBJECT, \
                                       mailTo)
-         raise (GmiAutomationTools.constants.ERROR)
+         raise GmiAutomationTools
       
       if realTime[0:4] == "true":
          realTimeDate = self.tasks[0].year + \
