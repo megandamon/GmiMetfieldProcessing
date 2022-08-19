@@ -167,7 +167,8 @@ class GmiGEOS5DasAvg2D (GmiGEOS5DasFields):
       exitMutexes = []
       count = 0
       for prefix in self.PREFIXES:
-         for resolution in ["2x2.5", "1x1.25", "0.625x0.5"]:
+         #for resolution in ["2x2.5", "1x1.25", "0.625x0.5"]:
+         for resolution in ["1x1.25", "0.625x0.5"]:
             fileName = self.basePath + prefix  + self.endPath + "." + resolution + ".nc"
             if not os.path.exists (fileName): raise fileName + " does not exist! ERROR"
 

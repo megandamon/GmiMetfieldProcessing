@@ -232,7 +232,6 @@ print("\n\nAbout to process tasks...")
 #----------------------------------------------------------------
 threadCount = 0
 taskCount = 0
-#exitMutexes = []
 
 for task in gmiAutomationObject.tasks:
     dasTasks.removeInterFiles (task, dasObjects)
@@ -254,18 +253,17 @@ try:
         print("\nTask source path: ", task.sourcePath)
 
         try:
-            dasTasks.copyMerra2DataToWorkingDir (task, dasObjects, \
-                                                     archiveSystem, transferFile, \
-                                                     processDirectory, \
-                                                     _thread.allocate_lock(), mailTo, \
-                                                     ftpScript)
+           dasTasks.copyMerra2DataToWorkingDir (task, dasObjects, \
+                                                    archiveSystem, transferFile, \
+                                                    processDirectory, \
+                                                    _thread.allocate_lock(), mailTo, \
+                                                    ftpScript)
         except:
-            ioRoutines.errorAndQuit ("Aborting MERRA2 regridding after copying failed " \
-                                         + "due to the exception:" \
-                                         + str (sys.exc_info ()), autoConstants.ERROR_SUBJECT, \
-                                         mailTo, lockFile)
-
-
+           ioRoutines.errorAndQuit ("Aborting MERRA2 regridding after copying failed " \
+                                        + "due to the exception:" \
+                                        + str (sys.exc_info ()), autoConstants.ERROR_SUBJECT, \
+                                        mailTo, lockFile)
+        
         profileTaskFile = profileDir + "task." + entry + ".profile"
         if os.path.exists (profileTaskFile): os.remove (profileTaskFile)
         if preStageOnly != "true":        

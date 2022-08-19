@@ -92,19 +92,22 @@ class GmiDasTasks:
          # By now, the data has been staged
          task.sourcePath = task.destinationPath
          
-         print("\nChecking for DAS source files ...")
+         print("\nChecking for MERRA-2 source files ...")
          self.checkSourceFiles (task, dasObjects, mailTo)
 
-         print("\n\nDistributed processing ...")
+
+         print("\n\nDistributed processing ... (regrid, convert to/from HDF)")
          self.doProcessing (task, dasObjects, destPath)
          
-         print("\nDoing optical depth calculation")
+         print("\nCreating optical depth ")
          self.doOpticalDepth (task, dasObjects)
 
+
          # NEED TO MAKE SURE that OPTDEPTH  gets carried along
-         print("\nMerging across DAS types ...")
+         print("\nMerging for OPTDEPTH, etc. ...")
          self.mergeAcrossDataTypes (task, dasObjects, mailTo, levsFile)
 
+         
          print("\nAdding lat,lev,and time file")
          self.add1DVars (task)
 
@@ -112,16 +115,17 @@ class GmiDasTasks:
          # this is taking a very long time, in particular: adding am, and bm
          # are am and bm necessary?
          # can they be done at another time? 
-         print("\nRemapping the lon coordinate")
+         print("\nRemapping data along longitude coorindate.")
          self.remapData (task, mailTo, levsFile)
 
 
-         # This can/should be paralleized 
+         # TODO: make parallel
          print("\nRename Fields...")
          self.renameFields (task)
 
+   
 
-         print("\nadd longtitude array to all files")
+         print("\nAdding longtitude array")
          self.addLongitudeAmBmToArray (task)
 
 
@@ -167,20 +171,23 @@ class GmiDasTasks:
          self.ioRoutines.mailMessage ("GmiDasTasks error: "+ str(error), \
                                          self.autoConstants.ERROR_SUBJECT, \
                                          mailTo)
-                        
-             
-
+                                     
    def addLongitudeAmBmToArray (self, task):
       print("\nAdding Longitude to files.")
 
-      for resolution in ["2x2.5", "1x1.25", "0.625x0.5"]:
 
-         ambmFile = "netcdf/am.bm.nc"
+      
+      #for resolution in ["2x2.5", "1x1.25", "0.625x0.5"]:
+      for resolution in ["1x1.25", "0.625x0.5"]:
+
+         fileList = []
+         fileList.append("netcdf/lon." + resolution + ".nc")
          mainFile = self.basePath + task.year + task.month + \
              task.day + "." + resolution + ".nc"
+         fileList.append(mainFile)
 
-         returnCode = self.netCdfTools.mergeFilesIntoNewFile([ambmFile,mainFile], \
-                                                                mainFile)
+         returnCode = self.netCdfTools.mergeFilesIntoNewFile(fileList, \
+                                                             mainFile)
 
 
 
@@ -193,16 +200,18 @@ class GmiDasTasks:
    #---------------------------------------------------------------------------  
    def add1DVars (self, task):            
 
-      #MERRA2_400.20160101.1D.0.625x0.5.nc       
-      #MERRA2_400.20160101.0.625x0.5.nc   
+      #MERRA2_400.YYYYMMDD.1D.0.625x0.5.nc       
+      #MERRA2_400.YYYYMMDD.0.625x0.5.nc   
 
-      for resolution in ["2x2.5", "1x1.25", "0.625x0.5"]:
+      #for resolution in ["2x2.5", "1x1.25", "0.625x0.5"]:
+      for resolution in ["1x1.25", "0.625x0.5"]:
 
          basePathWithDate = self.basePath + task.year + task.month + \
              task.day + "."
 
          oneDFile = basePathWithDate + "1D." + resolution + ".nc"
          sourceFile = basePathWithDate +  resolution + ".nc"
+
 
          fileList = []
          fileList.append (sourceFile)
@@ -414,7 +423,7 @@ class GmiDasTasks:
                    "." + resolution + ".nc"
 
          if not os.path.exists (thePath):
-            raise self.autoConstants.NOSUCHFILE + " " + thePath
+            raise Exception(self.autoConstants.NOSUCHFILE + " " + thePath)
 
       print ("\nCheck for files was successful.")
 
@@ -490,7 +499,8 @@ class GmiDasTasks:
    def remapData (self, task, mailTo, levsFile):
       count = 0
       exitMutexes = []
-      for resolution in ["2x2.5", "1x1.25", "0.625x0.5"]:
+      #for resolution in ["2x2.5", "1x1.25", "0.625x0.5"]:
+      for resolution in ["1x1.25", "0.625x0.5"]:
          sourceFile = self.basePath + task.year + task.month + \
              task.day + "." + resolution + ".nc"
          exitMutexes.append (_thread.allocate_lock())
@@ -538,53 +548,34 @@ class GmiDasTasks:
    # the order of the object see C.* below.
    #----------------------------------------------------------------
    def doProcessing (self, task, dasObjects, destPath):
+
       exitMutexes = []
-      threadCount = 0
       sourcePath = task.sourcePath
+      threadCount = 0
 
-
-      #A.* start avg3D - takes the longest/most memory
+      #A.* avg3D takes longer than the others combined
       task.sourcePath = sourcePath
       for dasObject in dasObjects:
          
-         if dasObject.TYPE == "avg3D":
 
-            print("\n", dasObject.TYPE, " started! ")
+         print("\n", dasObject.TYPE, " started in thread! ")
+
+         exitMutexes.append (_thread.allocate_lock())
+         _thread.start_new (dasObject.doGEOSFields, \
+                            (task, destPath, \
+                             exitMutexes[threadCount]))
          
-            exitMutexes.append (_thread.allocate_lock())
-            _thread.start_new (dasObject.doGEOSFields, \
-                             (task, destPath, \
-                              exitMutexes[threadCount]))
-            threadCount = threadCount + 1
-
-
-      # wait for Avg3D to finish
-      for mutex in exitMutexes:
-         while not mutex.locked (): 
-            pass
-
-      
-      for dasObject in dasObjects:
-
-         if dasObject.TYPE == "avg2D" or dasObject.TYPE == "inst2D":
-
-            print("\n", dasObject.TYPE, " started! ")
+         threadCount+=1
             
-            exitMutexes.append (_thread.allocate_lock())
-
-            _thread.start_new (dasObject.doGEOSFields, \
-                              (task, destPath, \
-                               exitMutexes[threadCount]))
-            
-            threadCount = threadCount + 1
       
-      
-      #C.*
+      #B.*
       # Wait for "all" threads to complete
       # The avg3D takes the longest
       for mutex in exitMutexes:
          while not mutex.locked (): 
             pass
+
+      print ("The three processing threads from doProcessing finished!")
 
 
    #----------------------------------------------------------------

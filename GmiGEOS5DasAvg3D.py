@@ -165,7 +165,8 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
       # needed for the merge later      
       for prefix in ["tavg3_3d_trb_Ne", "tavg3_3d_mst_Ne", "tavg3_3d_mst_Ne_set2"]:
 
-         for resolution in [ "1x1.25", "2x2.5", "0.625x0.5"]:
+         #for resolution in [ "1x1.25", "2x2.5", "0.625x0.5"]:
+         for resolution in [ "1x1.25", "0.625x0.5"]:
             fileString = "MERRA2_400." + prefix + \
                "." + task.year + task.month + task.day + "." + \
                resolution + ".nc"
@@ -220,7 +221,8 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
 #      NOCLOUDFIELDS.remove ("lev_edges")
       
 
-      for resolution in [ "1x1.25", "2x2.5" ]:
+      #for resolution in [ "1x1.25", "2x2.5" ]:
+      for resolution in [ "1x1.25" ]:
          outFileName = basePath + task.filePrefix + "." + \
              self.GMIPREFIX + "." + task.year + \
              task.month + task.day + "." + \
@@ -364,7 +366,8 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
                          "/" + task.month + "/" + fileString
                
          # process each resolution
-         for resolution in ["1x1.25", "2x2.5", "0.625x0.5"]:
+         #for resolution in ["1x1.25", "2x2.5", "0.625x0.5"]:
+         for resolution in ["1x1.25", "0.625x0.5"]:
 
             destinationFile = destinationPath + "/" + \
                               fileString[0:len(fileString)-3] + \
@@ -421,7 +424,8 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
       basePath = self.basePath
       basePathWithDate = self.basePath + task.year + task.month + task.day + "."
 
-      for resolution in ["1x1.25", "2x2.5", "0.625x0.5"]:
+      #for resolution in ["1x1.25", "2x2.5", "0.625x0.5"]:
+      for resolution in ["1x1.25", "0.625x0.5"]:
          filesToMerge = []
 
          fileName = basePath + "tavg3_3d_cld_Nv"  + self.endPath + "." + resolution + ".nc"
@@ -462,7 +466,8 @@ class GmiGEOS5DasAvg3D (GmiGEOS5DasFields):
       count = 0
       for prefix in self.PREFIXES:
 
-         for resolution in ["2x2.5", "1x1.25", "0.625x0.5"]:
+         #for resolution in ["2x2.5", "1x1.25", "0.625x0.5"]:
+         for resolution in ["1x1.25", "0.625x0.5"]:
 
             fileName = self.basePath + prefix  + self.endPath + "." + resolution + ".nc"
             if not os.path.exists (fileName): raise fileName + " does not exist! ERROR"

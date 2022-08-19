@@ -19,6 +19,7 @@ import datetime
 import re
 from numpy import *
 from netCDF4 import Dataset
+import xarray as xr
 #from pynetcdf import *
 import subprocess
 
@@ -315,6 +316,7 @@ class GmiNetCdfFileTools:
       if not os.path.exists (netCdfFileName):
          return self.constants.NOSUCHFILE
 
+      print ("In doNetcdfToHdfDump")
       systemCommand = self.constants.NCDUMPPATH + "/ncdump -v "
 
       loopCounter = 0
@@ -404,7 +406,8 @@ class GmiNetCdfFileTools:
  #     print numTimes
  #     print str(numTimes)
  #     print netCdfFile
-      
+
+      print ("in changeTimeDimToUnlim")
       systemCommand = self.constants.NCDUMPPATHSAFE + 'ncdump ' + \
                       netCdfFile + " | " + self.constants.SED_PATH + \
                       'sed -e "s/time = ' + str(numTimes) + ' ;' \
@@ -679,7 +682,8 @@ class GmiNetCdfFileTools:
          print((hdfFileName, " does not exist!\n"))
          exitMutex.acquire ()
          return self.constants.NOSUCHFILE
-         
+
+      print ("In doHdfDumptoNetcdfNofields")
       systemCommand = self.constants.HDFDUMPPATH + 'ncdump '
 
       # add the input file name to the command
@@ -746,9 +750,13 @@ class GmiNetCdfFileTools:
          print((hdfFileName, " does not exist!\n"))
          exitMutex.acquire ()
          return self.constants.NOSUCHFILE
+
+      print ("in do HDFdumptoNetcdf")
+      if "CLOUD" not in hdfFileName:
+         systemCommand = self.constants.HDFDUMPPATH + 'ncdump -v '
+      else:
+         systemCommand = self.constants.HDFDUMPPATH + 'h4_ncdump -v '
          
-      systemCommand = self.constants.HDFDUMPPATH + 'ncdump -v '
-      
       loopCounter = 0
       while loopCounter < len (fieldNames):
          systemCommand = systemCommand + fieldNames[loopCounter]
@@ -801,7 +809,7 @@ class GmiNetCdfFileTools:
                              doSed, \
                              exitMutex):  
 
-   #   print "doHdfDumpToNetCdf!!!"
+
       
       if len (fieldNames) <= 0:
     #     print "doHdfDumpToNetCdf ACQUIRING MUTEX"
@@ -827,7 +835,8 @@ class GmiNetCdfFileTools:
   #       print "doHdfDumpToNetCdf ACQUIRING MUTEX"
          exitMutex.acquire ()
          return self.constants.NOSUCHFILE
-         
+
+      print ("In doHdfDumpToNetCdfRelaxMaxDims")
       systemCommand = self.constants.HDFDUMPPATH + 'ncdump -v '
       
       loopCounter = 0
@@ -944,6 +953,7 @@ class GmiNetCdfFileTools:
          exitMutex.acquire ()
          return self.constants.NOSUCHFILE
 
+      print ("in doHdfDumpToNetCdfWithFillValue")
       systemCommand = self.constants.HDFDUMPPATH + 'ncdump-hdf4 -v '
 
       loopCounter = 0
@@ -1019,7 +1029,8 @@ class GmiNetCdfFileTools:
          #print "doHdfDumpToNetCdf2 ACQUIRING MUTEX"
          exitMutex.acquire ()
          return self.constants.NOSUCHFILE    
-      
+
+      print ("doHdfDumpToNetCdf2")
       systemCommand = self.constants.HDFDUMPPATH + 'ncdump-hdf4 -v '
 
       loopCounter = 0
@@ -1418,7 +1429,27 @@ class GmiNetCdfFileTools:
 
 #      print "returning from extractSubsetOfVariables"
       return self.constants.NOERROR
-    
+
+
+   def compressFileAndRemoveOld (self, oldFileName, newFileName):
+
+      # command to merge netcdf files
+      systemCommand = self.constants.NCKSPATH + \
+         "ncks --hst --no_abc -O -4 -L 2 --cnk_plc=g2d " + \
+         "--cnk_dmn lat,721 --cnk_dmn lon,1440 --cnk_dmn lev,1 " + \
+         " " + oldFileName + " " + newFileName
+                  
+      print ("\n", systemCommand)
+
+      systemReturnCode = os.system (systemCommand)
+
+      if systemReturnCode != 0:
+         return self.constants.BADSYSTEMRETURNCODE
+
+      return 0
+
+
+      
    #---------------------------------------------------------------------------  
    # AUTHORS: Megan Damon NASA GSFC / NGIT / TASC
    #
@@ -1601,7 +1632,6 @@ class GmiNetCdfFileTools:
          print(("NO SUCH FILE: ", fileName))
          exitMutex.acquire()
 
-#      ncObject = NetCDFFile (fileName, 'as')
       ncObject = Dataset (fileName, 'r+')
 
       lonValues = ncObject.variables["lon"]
@@ -1609,7 +1639,6 @@ class GmiNetCdfFileTools:
 
       print ("\nDone opening the file: ", fileName)
 
-      
       # calculate the beg, middle and end of lon coord
       beg = 0
       mid = len (lonValues) / 2
@@ -1620,34 +1649,47 @@ class GmiNetCdfFileTools:
       newCoords1 = [int(beg),int(mid)]
       newCoords2 = [int(mid),int(end)]
 
-      print ("\n old and new coordinates: ")
-      print (oldCoords2)
-      print (newCoords2)
-
-
+      
       for variable in ncObject.variables:
 
          print ("\nReading: ", variable, " from ", fileName)
 
-         returnValues = ncObject.variables[variable]
+         returnValues = ncObject.variables[variable][:]
          sizeOfVar = len(returnValues.shape)
+
             
          if sizeOfVar == 3:
+            
             if returnValues.shape[2:3] == shape288.shape or \
                    returnValues.shape[2:3] == shape144.shape or \
                    returnValues.shape[2:3] == shape576.shape :
-               self.swapIndex3D (returnValues, oldCoords1, \
+
+
+
+               swappedValues = self.swapIndex3D (returnValues, oldCoords1, \
                                  oldCoords2, newCoords1, newCoords2)
+
+               ncObject.variables[variable][:] = swappedValues
+
 
          if sizeOfVar == 4:
             if returnValues.shape[3:4] == shape288.shape or \
                    returnValues.shape[3:4] == shape144.shape or \
                    returnValues.shape[3:4] == shape576.shape :
-               self.swapIndex4D (returnValues, oldCoords1, \
-                                 oldCoords2, newCoords1, newCoords2)
+
+               swappedValues = self.swapIndex4D (returnValues, oldCoords1, \
+                                                 oldCoords2, newCoords1, newCoords2)
+
+               ncObject.variables[variable][:] = swappedValues
+
+
+      print ("Closing NetCDF file")
+      ncObject.close()
+
+      
 
       print ("\nUpdating global attribute for Met_Data_Name")
-      
+   
       if re.search ("2x2.5", fileName):
          globalAttr = "2x2%5x72"
       elif re.search ("1x1.25", fileName):
@@ -1679,9 +1721,9 @@ class GmiNetCdfFileTools:
       #    bmNc [counter] = self.bm [counter]
       #    counter = counter + 1
 
-      print ("\n Synching ncObject for ", fileName)
-      ncObject.sync()
 
+
+      
       print ("\n Acquiring mutex for ", fileName)
       exitMutex.acquire()
       return self.constants.NOERROR
@@ -1694,6 +1736,8 @@ class GmiNetCdfFileTools:
          raise constants
       if len (old1) != len (new1):
          raise constants
+
+      print ("\nIn swapIndex3D")
       
       count = 0
     
@@ -1702,34 +1746,20 @@ class GmiNetCdfFileTools:
       theShape = shape(returnValues)
       newShape = (theShape[0], theShape[1], int(old2[count]-old1[count]))
       
-       #      print "Shape of field variable: ", theShape
-       #     print "Shape of holder variable: ", newShape
-   
-      
-      # get all the values from the NC variable and
-      # save the part of the array we are about to
-      # overwrite
-
-
-      #print ("Types of shape and new shape: ", type(theShape), type(newShape))
-      #print ("\nnewShape: ", newShape)
       
       theValues = zeros(theShape, float32)
       theValues [:,:,:] =  returnValues [:,:,:]
       saveLocal = zeros(newShape, float32)
-
-      #print ("\nold1: ", old1)
-      #print ("\old2: ", old2)
       
       saveLocal[:,:,:] = theValues[:,:,old1[count]:old2[count]]
       
       # swap the data
-  #    print "about to swap: ", old1[count], ":", old2[count], "and ", new1[count], ":", new2[count]
+      print ("\nswapping: ", old1[count], ":", old2[count], "and ", new1[count], ":", new2[count])
       theValues[:,:,old1[count]:old2[count]] = theValues[:,:,new1[count]:new2[count]]
       theValues[:,:,new1[count]:new2[count]] = saveLocal[:,:,:]
 
-      returnValues = theValues
-#      returnValues.assignValue (theValues)
+      return theValues
+
 
 
    def swapIndex4D (self, returnValues, old1, old2, new1, new2):
@@ -1740,6 +1770,8 @@ class GmiNetCdfFileTools:
       if len (old1) != len (new1):
          raise constants.ERROR
 
+      print ("\nIn swapIndex4D")
+
       count = 0
     
       # get the shape of the field and
@@ -1747,28 +1779,17 @@ class GmiNetCdfFileTools:
       theShape = shape(returnValues)
       newShape = (theShape[0], theShape[1], theShape[2], old2[count]-old1[count])
 
-#      print "Shape of field variable: ", theShape
-#      print "Shape of holder variable: ", newShape
-
-    
-      # get all the values from the NC variable and
-      # save the part of the array we are about to
-      # overwrite
-
-      #theValues = returnValues.getValue()
       theValues = zeros(theShape, float32)
       theValues [:,:,:,:] =  returnValues [:,:,:,:]
       saveLocal = zeros(newShape, float32)
       saveLocal[:,:,:,:] = theValues[:,:,:,old1[count]:old2[count]]
 
       # swap the data
-      #print "about to swap: ", old1[count], ":", old2[count], "and ", new1[count], ":", new2[count]
+      print ("\nswapping: ", old1[count], ":", old2[count], "and ", new1[count], ":", new2[count])
       theValues[:,:,:,old1[count]:old2[count]] = theValues[:,:,:,new1[count]:new2[count]]
       theValues[:,:,:,new1[count]:new2[count]] = saveLocal[:,:,:,:]
 
-      returnValues = theValues
-#      returnValues.assignValue (theValues)
-
+      return theValues
       
    
    def copyVariableAttributesFromOrginal (self, originalNcObject, variable, newValues):

@@ -351,7 +351,8 @@ class GmiDasFields:
       bbscpCmd = self.constants.BBSCPPATH + "bbscp "
       newTransferFile = transferFile + "." + str (time())
 
-      for resolution in ["4x5", "2x2.5"]:
+      #for resolution in ["4x5", "2x2.5"]:
+      for resolution in ["4x5"]:
 
          fullArchivePath = archiveDirectory + "/" + resolution \
                            + "/" + task.year

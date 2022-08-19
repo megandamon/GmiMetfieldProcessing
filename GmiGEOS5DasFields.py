@@ -38,7 +38,8 @@ class GmiGEOS5DasFields:
    #---------------------------------------------------------------------------  
 
 
-   RESOLUTIONS = ['2x2.5', '1x1.25', '0.625x0.5']
+   #RESOLUTIONS = ['2x2.5', '1x1.25', '0.625x0.5']
+   RESOLUTIONS = ['1x1.25', '0.625x0.5']
    oldFieldNames = ['TROPPB', 'TS', 'SWGNT', 'PARDRLAND', 'PARDFLAND', 'lon']
    newFieldNames = ['TROPP', 'TSKIN', 'SWGNET', 'PARDR', 'PARDF', 'lon_old']
    longitude = zeros(144)
@@ -144,7 +145,8 @@ class GmiGEOS5DasFields:
 
    def makeTimeDimRecordDim (self, task):
       netCdfObject = GmiNetCdfFileTools ()
-      for resolution in ["2x2.5", "1x1.25", "0.625x0.5"]:
+      #for resolution in ["2x2.5", "1x1.25", "0.625x0.5"]:
+      for resolution in ["1x1.25", "0.625x0.5"]:
          fileName = self.basePath + self.GMIPREFIX + self.endPath + "." + \
              resolution + ".nc"
          netCdfObject.makeDimensionRecordDimension (fileName, 'time')
@@ -159,11 +161,14 @@ class GmiGEOS5DasFields:
    #--------------------------------------------------------------------------- 
    
    def doGEOSFields (self, task, destinationPath, exitMutex):
+
+      print ("In doGEOSFields")
       
       self.prepareGEOSFields (task)
 
       print("doGEOS5DASFields parent ACQURING MUTEX")
       exitMutex.acquire ()
+      print("returning from doGEOS5DASFields")
 
    def extractTimeRecords (self, task, spec, min, max, stride):
 
@@ -272,7 +277,8 @@ class GmiGEOS5DasFields:
       cpCmd = "cp "
       newTransferFile = transferFile + "." + str (time())
 
-      for resolution in ["2x2.5", "1x1.25"]:
+      #for resolution in ["2x2.5", "1x1.25"]:
+      for resolution in ["1x1.25"]:
 
          fullArchivePath = archiveDirectory + "/" + resolution \
                            + "/" + task.year

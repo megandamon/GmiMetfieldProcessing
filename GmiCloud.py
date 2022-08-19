@@ -17,6 +17,9 @@ import datetime
 import re
 import _thread
 from numpy import *
+from pathlib import Path
+
+
 #from pynetcdf import *
 from GmiNetCdfFileTools import GmiNetCdfFileTools
 from GmiAutomationConstants import GmiAutomationConstants
@@ -36,6 +39,10 @@ class GmiCloud:
     def createCloudVars (self, path, year, month, day, \
                                      filePrefix):
 
+
+        print("\nin createCloudVars")
+
+        
         netCdfObject = GmiNetCdfFileTools()
 
         nativeRes = "0.625x0.5" 
@@ -46,18 +53,28 @@ class GmiCloud:
             ".CLOUD." + year + month + \
             day + "." + nativeRes + ".nc"
 
-        print("\nin createCloudVars")
+
 
         print("\nnative degree file: ", cloudFile)
 
-        for resolution in ["1x1.25", "2x2.5"]:
+        if not os.path.exists(cloudFile):
+            print ("Native degree file does not exist: ", cloudFile)            
+            sys.exit(0)
+
+            
+        #for resolution in ["1x1.25", "2x2.5"]:
+        for resolution in ["1x1.25"]:
+
+            print ("\n\nCreating optdepth for: ", resolution)
+            
             newFileName = re.sub (nativeRes, resolution, cloudFile)
             newFileName = newFileName + ".hdf"
 
             sysCommand = self.params.OPTEXEC + " " + cloudFile + " " + newFileName + " " + \
                 resolution + " 8"
 
-            print("\n", sysCommand)
+            print("\nExecuting: \n", sysCommand)
+
             os.system (sysCommand)
 
             returnCode = netCdfObject.doHdfDumpToNetCdf (['OPTDEPTH', 'TAUCLW', 'TAUCLI', 'CLOUD'], \
@@ -67,6 +84,8 @@ class GmiCloud:
                                                              _thread.allocate_lock())
             if returnCode != self.params.NOERROR:
                 raise Exception("Problem dumping tau fields to netcdf")
+
+            print ("\nRemoving: ", newFileName)
             os.remove (newFileName)
 
 
@@ -75,6 +94,7 @@ class GmiCloud:
                 ".tavg3d." + year + month + \
                 day + "." + resolution + ".nc"
 
+            print ("\nMerging files: ", newFileName + "opti.nc", lowResFileName)
             returnCode = netCdfObject.mergeFilesIntoNewFile ([newFileName + "opt.nc", lowResFileName], \
                                                          lowResFileName)
             if returnCode != self.params.NOERROR:
